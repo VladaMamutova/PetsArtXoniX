@@ -54,12 +54,13 @@ void XonixManager::LoadPetImage()
 
 void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	// Пропорционально масштабируем картинку.
-	Graphics graph(hdc);
+	Graphics graphics(hdc);
 
+	int padding = 30;
 	double imageWidth = petImage->GetWidth();
 	double imageHeight = petImage->GetHeight();
-	double windowWidth = rect.right - rect.left;
-	double windowHeight = rect.bottom - rect.top;
+	double windowWidth = rect.right - rect.left - padding * 2;
+	double windowHeight = rect.bottom - rect.top - padding * 2;
 
 	double scaleX = windowWidth / imageWidth;
 
@@ -74,7 +75,23 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 		newHeight *= scaleY;
 	}
 
-	graph.DrawImage(petImage, (int)((rect.right - newWidth) / 2),
-		(int)rect.top,
+	int x = (int)(rect.right - newWidth) / 2;
+	int y = (int)(rect.bottom - newHeight) / 2;
+	
+	graphics.DrawImage(petImageOutline, x, y,
 		(int)newWidth, (int)newHeight);
+
+	// Атрибуты для указания, как будет отрисовываться изображение.
+	//ImageAttributes imAtt;
+	//imAtt.SetWrapMode(WrapModeTileFlipXY);
+	//graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+	//graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
+
+	//Rect zoomRect(x, y, 300, 300);
+	//graphics.DrawImage(petImage, zoomRect, 0, 0, 
+	//	300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel, &imAtt);
+
+	Rect zoomRect(x, y, 300, 300);
+	graphics.DrawImage(petImage, zoomRect, 0, 0, 
+		300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel);
 }

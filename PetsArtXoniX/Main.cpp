@@ -37,8 +37,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 	xonixManager = new XonixManager();
 	xonixManager->StartNewGame();
 
-	int width = 700;
-	int height = 450;
+	int width = 450;
+	int height = 580;
 	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPEDWINDOW,
 		GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2,
 		GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2,
@@ -69,14 +69,27 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_COMMAND:
 
 		break;
-	case WM_PAINT:
+	case WM_PAINT: {
 		hdc = BeginPaint(hWnd, &ps);
+		
+		// Получаем размер экрана.
 		RECT rect;
 		GetClientRect(hWnd, &rect);
+
+		// Заливаем фон с помощью градиентной кисти.
+		Graphics graphics(hdc);
+		Rect bounds(0, 0, rect.right, rect.bottom);
+		LinearGradientBrush brush(bounds, Color(100, 200, 0), Color(200, 200, 0),
+			LinearGradientModeForwardDiagonal);
+		graphics.FillRectangle(&brush, bounds);
+		
+		// Перерисовываем все объекты в игре.
 		xonixManager->OnPaint(hdc, rect);
+
 		EndPaint(hWnd, &ps);
 
 		break;
+	}
 	case WM_GETMINMAXINFO:
 	{
 		// Устанавливаем минимальный размер окна.
