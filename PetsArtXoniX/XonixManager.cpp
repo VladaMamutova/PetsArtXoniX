@@ -1,4 +1,5 @@
 ﻿#include "XonixManager.h"
+#include <math.h>
 #pragma comment(lib, "GdiPlus.lib")
 
 XonixManager::XonixManager()
@@ -7,13 +8,11 @@ XonixManager::XonixManager()
 
 	// Определяем словарь картинок.
 	wchar_t name[LEVEL_COUNT][50] = { L"yorkshire-terrier" };
-	wchar_t path[50];
 	for (int i = 1; i <= LEVEL_COUNT; i++) {
 		swprintf_s(imagePathes[i].Filled, L"%ls.jpg", name[i - 1]);
 		swprintf_s(imagePathes[i].Outline, L"%ls-outline.jpg", name[i - 1]);
 	}
 }
-
 
 XonixManager::~XonixManager()
 {
@@ -51,6 +50,23 @@ void XonixManager::LoadPetImage()
 	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[level].Outline);
 	petImageOutline = new Image(imagePath);
 }
+
+void XonixManager::InitMainCircle(int x, int y) {
+	mainCircle.SetX(x);
+	mainCircle.SetY(y);
+}
+
+//void XonixManager::InitEnemyCircles() {
+//	SimpleCircle mainCircleArea = mainCircle.getCircleArea();
+//	circles = new ArrayList<>();
+//	for (int i = 0; i < ENEMY_CIRCLES_COUNT; i++) {
+//		EnemyCircle circle;
+//		do {
+//			circle = EnemyCircle.getRandomCircle(false);
+//		} while (circle.isIntersect(mainCircleArea));
+//		circles.add(circle);
+//	}
+//}
 
 void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	// Пропорционально масштабируем картинку.
@@ -93,5 +109,19 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 
 	Rect zoomRect(x, y, 300, 300);
 	graphics.DrawImage(petImage, zoomRect, 0, 0, 
-		300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel);
+		(int)(300 * imageWidth/newWidth), (int)(300 * imageHeight/ newHeight), UnitPixel);
+
+	InitMainCircle(x + newWidth / 2 - mainCircle.GetRadius(),
+		y + newHeight - mainCircle.GetRadius());
+	
+	Color color = mainCircle.GetColor();
+	SolidBrush brush(color);
+	graphics.FillEllipse(&brush, mainCircle.GetX(), mainCircle.GetY(),
+		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+
+	Color darkerColor(max(color.GetR() - 100, 0),
+		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
+	Pen pen(darkerColor, 1);
+	graphics.DrawEllipse(&pen, mainCircle.GetX(), mainCircle.GetY(),
+		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
 }

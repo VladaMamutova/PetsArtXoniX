@@ -1,8 +1,10 @@
-﻿#include <windows.h> // обязательно до gdiplus.h
+﻿#pragma once
+#include <windows.h> // обязательно до gdiplus.h
 #include <gdiplus.h>
-#include <string>
 #include <map>
 #include "PairImages.h"
+#include "MainCircle.h"
+#include "EnemyCircle.h"
 
 using namespace std;
 using namespace Gdiplus;
@@ -20,11 +22,15 @@ private:
 	// значение - структура, содержащая пару картинок: заполненную и контур.
 	map <int, PairImages> imagePathes;
 	int level;
+
+	MainCircle mainCircle;
+	//vector<EnemyCircle> circles;
 public:
 	XonixManager();
 	~XonixManager();
 	void StartNewGame();
 	void LoadPetImage();
+	void InitMainCircle(int x, int y);
+	void InitEnemyCircles();
 	void OnPaint(HDC, RECT);
 };
-

@@ -111,12 +111,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EnemyCircle.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="MainCircle.cpp" />
+    <ClCompile Include="SimpleCircle.cpp" />
     <ClCompile Include="XonixManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="EnemyCircle.h" />
+    <ClInclude Include="MainCircle.h" />
     <ClInclude Include="PairImages.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SimpleCircle.h" />
     <ClInclude Include="XonixManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PetsArtXoniX.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,9 +1,5 @@
-﻿#include <tchar.h>
-#include <windows.h>
+﻿#include <windows.h>
 #include <gdiplus.h>
-#include <cstring>
-#include <string>
-#include <iostream>
 #include "XonixManager.h"
 
 using namespace Gdiplus; // Для отрисовки фоновой картинки.
