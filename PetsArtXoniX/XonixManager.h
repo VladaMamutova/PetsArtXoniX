@@ -25,12 +25,18 @@ private:
 
 	MainCircle mainCircle;
 	//vector<EnemyCircle> circles;
+
+	void LoadPetImage();
+	void InitMainCircle(int x, int y);
+	//void InitEnemyCircles();
 public:
 	XonixManager();
 	~XonixManager();
-	void StartNewGame();
-	void LoadPetImage();
-	void InitMainCircle(int x, int y);
-	void InitEnemyCircles();
+	void StartNewGame(Rect rect);
+	void SetTopMove();
+	void SetBottomMove();
+	void SetLeftMove();
+	void SetRightMove();
+	void MoveCircle(HDC, RECT);
 	void OnPaint(HDC, RECT);
 };

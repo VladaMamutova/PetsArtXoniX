@@ -7,10 +7,13 @@ using namespace std;
 #pragma comment (lib,"Gdiplus.lib")
 
 XonixManager* xonixManager;
+HANDLE drawCirclesThread;
+bool gameStarted = false;
 
 LONG WinProc(HWND, UINT, WPARAM, LPARAM);
 BOOL RegWinClass(WNDPROC, LPCTSTR, HBRUSH);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+DWORD WINAPI DrawCirclesProc(LPVOID);
 
 HINSTANCE hInst;
 TCHAR progName[] = "MainWindow";
@@ -31,10 +34,10 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 	}
 
 	xonixManager = new XonixManager();
-	xonixManager->StartNewGame();
 
 	int width = 450;
 	int height = 580;
+
 	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPEDWINDOW,
 		GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2,
 		GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2,
@@ -59,12 +62,38 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	switch (msg) {
 	case WM_CREATE: {
-
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+		xonixManager->StartNewGame(Rect(0, 0, 
+			rect.right - rect.left, rect.bottom - rect.top));
+		drawCirclesThread = CreateThread(NULL, 0, DrawCirclesProc, (LPVOID)hWnd, 0, NULL);
+		gameStarted = true;
 		break;
 	}
-	case WM_COMMAND:
-
-		break;
+	case WM_KEYDOWN:
+	{
+		switch (wParam)
+		{
+		case VK_LEFT: {
+			xonixManager->SetLeftMove();
+			break;
+		}
+		case VK_RIGHT: {
+			xonixManager->SetRightMove();
+			break;
+		}
+		case VK_UP: {
+			xonixManager->SetTopMove();
+			break;
+		}
+		case VK_DOWN: {
+			xonixManager->SetBottomMove();
+			break;
+		}
+		default:
+			break;
+		}
+	}
 	case WM_PAINT: {
 		hdc = BeginPaint(hWnd, &ps);
 		
@@ -95,6 +124,11 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		break;
 	}
 	case WM_DESTROY:
+		gameStarted = false;
+		if (drawCirclesThread != NULL) {
+			PostThreadMessage((DWORD)drawCirclesThread, WM_QUIT, 0, 0);
+			CloseHandle(drawCirclesThread);
+		}
 		delete xonixManager;
 		PostQuitMessage(0);
 		break;
@@ -102,6 +136,23 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 
+	return 0;
+}
+
+DWORD WINAPI DrawCirclesProc(LPVOID hWnd) {
+	RECT rect;
+	HDC hdc = GetDC((HWND)hWnd);
+	int y = 0;
+	while (true) {
+		while (gameStarted) {
+			if (GetClientRect((HWND)hWnd, &rect)) {
+				xonixManager->MoveCircle(hdc, rect);
+				Sleep(3);
+			}
+		}
+		Sleep(100);
+	}
+	ReleaseDC((HWND)hWnd, hdc);
 	return 0;
 }
 

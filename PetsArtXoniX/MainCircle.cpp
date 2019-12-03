@@ -21,3 +21,65 @@ MainCircle::MainCircle(MainCircle &circle)
 MainCircle::~MainCircle()
 {
 }
+
+void MainCircle::SetDirection(Direction direction) {
+	this->direction = direction;
+}
+
+void MainCircle::MoveWithinTheBounds(Rect bounds) {
+	//if (direction == Direction::None) {
+	//	return;
+	//}
+
+	int xDelta = 0;
+	int yDelta = 0;
+	
+	switch (direction)
+	{
+	case Up: {
+		yDelta--;
+		break;
+	}
+	case Right: {
+		xDelta++;
+		break;
+	}
+	case Down: {
+		yDelta++;
+		break;
+	}
+	case Left: {
+		xDelta--;
+		break;
+	}
+	default:
+		break;
+	}
+
+	// Проверяем, не будет ли выходить шарик выходить за границы области.
+	// Если достиг границы, шарик останавливается.
+
+	if (x + xDelta + 2 * radius < bounds.GetLeft()) {
+		x = bounds.GetLeft() - 2 * radius;
+		direction = Direction::None;
+	}
+	else if(x + xDelta > bounds.Width) {
+		x = bounds.Width;
+		direction = Direction::None;
+	}
+	else {
+		x += xDelta;
+	}
+
+	if (y + yDelta + 2 * radius < bounds.GetTop()) {
+		y = bounds.GetTop() - 2 * radius;
+		direction = Direction::None;
+	}
+	else if (y + yDelta > bounds.Height) {
+		y = bounds.Height;
+		direction = Direction::None;
+	}
+	else {
+		y += yDelta;
+	}
+}

@@ -2,6 +2,8 @@
 #include <math.h>
 #pragma comment(lib, "GdiPlus.lib")
 
+using namespace Gdiplus;
+
 XonixManager::XonixManager()
 {
 	level = 1;
@@ -24,9 +26,34 @@ XonixManager::~XonixManager()
 	}
 }
 
-void XonixManager::StartNewGame() {
+void XonixManager::StartNewGame(Gdiplus::Rect rect) {
 	level = 1;
 	LoadPetImage();
+
+	int padding = 30;
+	double imageWidth = petImage->GetWidth();
+	double imageHeight = petImage->GetHeight();
+	double windowWidth = rect.Width - padding * 2;
+	double windowHeight = rect.Height - padding * 2;
+
+	double scaleX = windowWidth / imageWidth;
+
+	double newWidth = imageWidth * scaleX;
+	double newHeight = imageHeight * scaleX;
+
+	double scaleY = windowHeight / newHeight;
+
+	if (scaleY < 1)
+	{
+		newWidth *= scaleY;
+		newHeight *= scaleY;
+	}
+
+	int x = (int)(rect.GetRight() - newWidth) / 2;
+	int y = (int)(rect.GetBottom() - newHeight) / 2;
+
+	InitMainCircle(x + (int)(newWidth / 2) - mainCircle.GetRadius(),
+		y + (int)newHeight);
 }
 
 void XonixManager::LoadPetImage()
@@ -68,6 +95,59 @@ void XonixManager::InitMainCircle(int x, int y) {
 //	}
 //}
 
+void XonixManager::SetTopMove() {
+	mainCircle.SetDirection(Direction::Up);
+}
+
+void XonixManager::SetBottomMove() {
+	mainCircle.SetDirection(Direction::Down);
+}
+
+void XonixManager::SetLeftMove() {
+	mainCircle.SetDirection(Direction::Left);
+}
+
+void XonixManager::SetRightMove() {
+	mainCircle.SetDirection(Direction::Right);
+}
+
+void XonixManager::MoveCircle(HDC hdc, RECT rect) {
+	int padding = 30;
+	double imageWidth = petImage->GetWidth();
+	double imageHeight = petImage->GetHeight();
+	double windowWidth = rect.right - rect.left - padding * 2;
+	double windowHeight = rect.bottom - rect.top - padding * 2;
+
+	double scaleX = windowWidth / imageWidth;
+
+	double newWidth = imageWidth * scaleX;
+	double newHeight = imageHeight * scaleX;
+
+	double scaleY = windowHeight / newHeight;
+
+	if (scaleY < 1)
+	{
+		newWidth *= scaleY;
+		newHeight *= scaleY;
+	}
+
+	int x = (int)(rect.right - newWidth) / 2;
+	int y = (int)(rect.bottom - newHeight) / 2;
+
+	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(x, y, x + (int)newWidth, y + (int)newHeight));
+	Graphics graphics(hdc);
+	Color color = mainCircle.GetColor();
+	SolidBrush brush(color);
+	graphics.FillEllipse(&brush, mainCircle.GetX(), mainCircle.GetY(),
+		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+
+	Color darkerColor(max(color.GetR() - 100, 0),
+		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
+	Pen pen(darkerColor, 1);
+	graphics.DrawEllipse(&pen, mainCircle.GetX(), mainCircle.GetY(),
+		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+}
+
 void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	// Пропорционально масштабируем картинку.
 	Graphics graphics(hdc);
@@ -107,21 +187,13 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	//graphics.DrawImage(petImage, zoomRect, 0, 0, 
 	//	300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel, &imAtt);
 
-	Rect zoomRect(x, y, 300, 300);
+	Gdiplus::Rect zoomRect(x, y, 300, 300);
 	graphics.DrawImage(petImage, zoomRect, 0, 0, 
 		(int)(300 * imageWidth/newWidth), (int)(300 * imageHeight/ newHeight), UnitPixel);
-
-	InitMainCircle(x + newWidth / 2 - mainCircle.GetRadius(),
-		y + newHeight - mainCircle.GetRadius());
-	
-	Color color = mainCircle.GetColor();
-	SolidBrush brush(color);
-	graphics.FillEllipse(&brush, mainCircle.GetX(), mainCircle.GetY(),
-		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
-
-	Color darkerColor(max(color.GetR() - 100, 0),
-		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
-	Pen pen(darkerColor, 1);
-	graphics.DrawEllipse(&pen, mainCircle.GetX(), mainCircle.GetY(),
-		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+	Rect borderRect(x - 2 * mainCircle.GetRadius(), y - 2 * mainCircle.GetRadius(),
+		(int)newWidth + 4 * mainCircle.GetRadius(), (int)newHeight + 4 * mainCircle.GetRadius());
+	LinearGradientBrush brush(borderRect, Color(255, 150, 0), Color(255, 170, 0), LinearGradientModeForwardDiagonal);
+	Pen pen(&brush, (REAL)2 * mainCircle.GetRadius());
+	pen.SetAlignment(PenAlignmentInset);
+	graphics.DrawRectangle(&pen, borderRect);
 }

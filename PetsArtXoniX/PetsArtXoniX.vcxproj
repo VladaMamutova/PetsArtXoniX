@@ -118,15 +118,13 @@
     <ClCompile Include="XonixManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Direction.h" />
     <ClInclude Include="EnemyCircle.h" />
+    <ClInclude Include="IMovable.h" />
     <ClInclude Include="MainCircle.h" />
     <ClInclude Include="PairImages.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="SimpleCircle.h" />
     <ClInclude Include="XonixManager.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="PetsArtXoniX.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
