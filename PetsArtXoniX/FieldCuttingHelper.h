@@ -9,6 +9,7 @@ using namespace Gdiplus;
 
 class FieldCuttingHelper
 {
+public:
 	struct VerticalLine
 	{
 		POINT top;
@@ -23,7 +24,6 @@ class FieldCuttingHelper
 		int bottom_left;
 	};
 
-public:
 	static queue<VerticalLine> FormVerticalLinesQueue(vector<POINT> points);
 	static void QuickSortPointsByX(POINT*, int);
 	static vector<Rect> SplitIntoRects(vector<POINT>);

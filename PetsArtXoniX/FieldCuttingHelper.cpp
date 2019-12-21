@@ -5,8 +5,8 @@ queue<FieldCuttingHelper::VerticalLine> FieldCuttingHelper::
 FormVerticalLinesQueue(vector<POINT> points)
 {
 	if (points.size() % 2 != 0) {
-		throw "Чтобы сформировать вертикальные линии, "
-			"число точек должно быть чётным.";
+		throw std::invalid_argument("Чтобы сформировать вертикальные линии, "
+			"число точек должно быть чётным.");
 	}
 
 	queue<VerticalLine> queue;
@@ -18,13 +18,13 @@ FormVerticalLinesQueue(vector<POINT> points)
 			sprintf_s(errorMessage, "Из точки (%d; %d) и точки (%d; %d) нельзя "
 				"сформировать вертикальную линию. Коорднаты X не совпадают.",
 				points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
-			throw errorMessage;
+			throw std::invalid_argument(errorMessage);
 		}
 		else if (points[i].y == points[i + 1].y) {
 			sprintf_s(errorMessage, "Из точки (%d; %d) и точки (%d; %d) нельзя "
 				"сформировать вертикальную линию. Точки совпадают.",
 				points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
-			throw errorMessage;
+			throw std::invalid_argument(errorMessage);
 		}
 		else {
 			if (points[i].y <= points[i + 1].y) {
