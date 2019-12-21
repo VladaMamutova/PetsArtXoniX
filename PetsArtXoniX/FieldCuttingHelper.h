@@ -25,7 +25,7 @@ public:
 	};
 
 	static queue<VerticalLine> FormVerticalLinesQueue(vector<POINT> points);
-	static void QuickSortPointsByX(POINT*, int);
-	static vector<Rect> SplitIntoRects(vector<POINT>);
+	static void QuickSortPointsByX(vector<POINT>* points, int left, int right);
+	static vector<Rect> SplitIntoRects(vector<POINT> points);
 };
 
