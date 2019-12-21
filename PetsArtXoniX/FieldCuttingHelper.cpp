@@ -1,14 +1,48 @@
 ﻿#include "FieldCuttingHelper.h"
 
-vector<FieldCuttingHelper::VerticalLine> FieldCuttingHelper::SplitIntoVerticalLines(vector<POINT> points)
+// Формирует очередь вертикальных линий последовательно из каждой пары точек.
+queue<FieldCuttingHelper::VerticalLine> FieldCuttingHelper::
+FormVerticalLinesQueue(vector<POINT> points)
 {
+	if (points.size() % 2 != 0) {
+		throw "Чтобы сформировать вертикальные линии, "
+			"число точек должно быть чётным.";
+	}
 
-	return vector<VerticalLine>();
-}
+	queue<VerticalLine> queue;
+	VerticalLine line;
+	char errorMessage[100];
 
-queue<FieldCuttingHelper::VerticalLine> FieldCuttingHelper::OrderVerticalLinesByX()
-{
-	return queue<VerticalLine>();
+	for (size_t i = 0; i < points.size(); i += 2) {
+		if (points[i].x != points[i + 1].x) {
+			sprintf_s(errorMessage, "Из точки (%d; %d) и точки (%d; %d) нельзя "
+				"сформировать вертикальную линию. Коорднаты X не совпадают.",
+				points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
+			throw errorMessage;
+		}
+		else if (points[i].y == points[i + 1].y) {
+			sprintf_s(errorMessage, "Из точки (%d; %d) и точки (%d; %d) нельзя "
+				"сформировать вертикальную линию. Точки совпадают.",
+				points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
+			throw errorMessage;
+		}
+		else {
+			if (points[i].y <= points[i + 1].y) {
+				// Начало координат - верхний левый угол, поэтому верхняя точка линии
+				// будет с меньшим значенией координаты Y.
+				line.top = points[i];
+				line.bottom = points[i + 1];
+			}
+			else {
+				line.top = points[i + 1];
+				line.bottom = points[i];
+			}
+
+			queue.push(line);
+		}
+	}
+
+	return queue;
 }
 
 // Сортирует точки по возрастанию координаты X алгоритмом быстрой сортировки.
@@ -65,6 +99,6 @@ vector<Rect> FieldCuttingHelper::SplitIntoRects(vector<POINT> points)
 		throw "Число точек должно быть чётным";
 	}
 
-	
+
 	return vector<Rect>();
 }

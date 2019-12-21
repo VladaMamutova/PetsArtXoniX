@@ -7,8 +7,6 @@
 using namespace std;
 using namespace Gdiplus;
 
-
-
 class FieldCuttingHelper
 {
 	struct VerticalLine
@@ -26,8 +24,7 @@ class FieldCuttingHelper
 	};
 
 public:
-	static vector<VerticalLine> SplitIntoVerticalLines(vector<POINT> points);
-	static queue<VerticalLine> OrderVerticalLinesByX();
+	static queue<VerticalLine> FormVerticalLinesQueue(vector<POINT> points);
 	static void QuickSortPointsByX(POINT*, int);
 	static vector<Rect> SplitIntoRects(vector<POINT>);
 };
