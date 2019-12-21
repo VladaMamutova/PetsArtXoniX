@@ -112,6 +112,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EnemyCircle.cpp" />
+    <ClCompile Include="FieldCuttingHelper.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MainCircle.cpp" />
     <ClCompile Include="SimpleCircle.cpp" />
@@ -120,6 +121,7 @@
   <ItemGroup>
     <ClInclude Include="Direction.h" />
     <ClInclude Include="EnemyCircle.h" />
+    <ClInclude Include="FieldCuttingHelper.h" />
     <ClInclude Include="IMovable.h" />
     <ClInclude Include="MainCircle.h" />
     <ClInclude Include="PairImages.h" />

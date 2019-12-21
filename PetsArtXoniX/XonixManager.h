@@ -2,6 +2,7 @@
 #include <windows.h> // обязательно до gdiplus.h
 #include <gdiplus.h>
 #include <map>
+#include <vector>
 #include "PairImages.h"
 #include "MainCircle.h"
 #include "EnemyCircle.h"
@@ -24,6 +25,7 @@ private:
 	int level;
 
 	MainCircle mainCircle;
+	Point startMovementPoint;
 	//vector<EnemyCircle> circles;
 
 	void LoadPetImage();

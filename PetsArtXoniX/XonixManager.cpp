@@ -79,6 +79,8 @@ void XonixManager::LoadPetImage()
 }
 
 void XonixManager::InitMainCircle(int x, int y) {
+	startMovementPoint.X = x;
+	startMovementPoint.Y = y;
 	mainCircle.SetX(x);
 	mainCircle.SetY(y);
 }
@@ -134,7 +136,23 @@ void XonixManager::MoveCircle(HDC hdc, RECT rect) {
 	int x = (int)(rect.right - newWidth) / 2;
 	int y = (int)(rect.bottom - newHeight) / 2;
 
+	Direction direction = mainCircle.GetDirection();
+	int circleX = mainCircle.GetX();
+	int circleY = mainCircle.GetY();
 	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(x, y, x + (int)newWidth, y + (int)newHeight));
+
+	// Если шарик начал движение, то фиксируем точку начала.
+	if (direction == Direction::None && mainCircle.GetDirection() != Direction::None) {
+		startMovementPoint.X = circleX;
+		startMovementPoint.Y = circleY;
+	}
+
+	// Если шарик двигался и прекратил движение, то 
+	if (direction != Direction::None && mainCircle.GetDirection() == Direction::None) {
+		startMovementPoint.X = circleX;
+		startMovementPoint.Y = circleY;
+	}
+
 	Graphics graphics(hdc);
 	Color color = mainCircle.GetColor();
 	SolidBrush brush(color);
@@ -150,6 +168,7 @@ void XonixManager::MoveCircle(HDC hdc, RECT rect) {
 
 void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	// Пропорционально масштабируем картинку.
+
 	Graphics graphics(hdc);
 
 	int padding = 30;

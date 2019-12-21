@@ -26,10 +26,15 @@ void MainCircle::SetDirection(Direction direction) {
 	this->direction = direction;
 }
 
+Direction MainCircle::GetDirection()
+{
+	return direction;
+}
+
 void MainCircle::MoveWithinTheBounds(Rect bounds) {
-	//if (direction == Direction::None) {
-	//	return;
-	//}
+	if (direction == Direction::None) {
+		return;
+	}
 
 	int xDelta = 0;
 	int yDelta = 0;

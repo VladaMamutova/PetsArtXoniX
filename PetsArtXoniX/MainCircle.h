@@ -13,6 +13,7 @@ public:
 	MainCircle(int x, int y);
 	MainCircle(MainCircle&);
 	void SetDirection(Direction direction);
+	Direction GetDirection();
 	virtual void MoveWithinTheBounds(Rect bounds);
 	~MainCircle();
 };
