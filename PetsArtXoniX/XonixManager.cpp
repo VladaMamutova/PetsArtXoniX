@@ -34,28 +34,14 @@ void XonixManager::StartNewGame(int windowWidth, int windowHeight) {
 	level = 1;
 	LoadPetImage();
 
-	windowWidth -= FIELD_MARGIN * 2;
-	windowHeight -= FIELD_MARGIN * 2;
-	
-	// Находим размеры картинки и поля при пропорциональном масшабировании.
-	double scaleX = (double)windowWidth / petImage->GetWidth();
+	width = petImage->GetWidth();
+	height = petImage->GetHeight();
+	ZoomImageToFitRect(&width, &height, 
+		windowWidth - 2 * FIELD_MARGIN,
+		windowHeight - 2 * FIELD_MARGIN);
 
-	double imageWidth = petImage->GetWidth() * scaleX;
-	double imageHeight = petImage->GetHeight() * scaleX;
-
-	double scaleY = (double)windowHeight / imageHeight;
-
-	if (scaleY < 1)
-	{
-		imageWidth *= scaleY;
-		imageHeight *= scaleY;
-	}
-
-	width = (int)imageWidth;
-	height = (int)imageHeight;
-
-	x0 = (windowWidth + FIELD_MARGIN * 2 - width) / 2;
-	y0 = (windowHeight + FIELD_MARGIN * 2 - height) / 2;
+	x0 = (windowWidth - width) / 2;
+	y0 = (windowHeight - height) / 2;
 
 	field = new int*[width];
 	for (int i = 0; i < width; ++i)
@@ -176,4 +162,25 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	Pen pen(&brush, (REAL)2 * mainCircle.GetRadius());
 	pen.SetAlignment(PenAlignmentInset);
 	graphics.DrawRectangle(&pen, borderRect);
+}
+
+void XonixManager::ZoomImageToFitRect(
+	int* imageWidth, int *imageHeight, int rectWidth, int rectHeight)
+{
+	// Пропорционально масштабируем картинку.
+	double scaleX = (double)rectWidth / *imageWidth;
+
+	double newImageWidth = *imageWidth * scaleX;
+	double newImageHeight = *imageHeight * scaleX;
+
+	double scaleY = (double)rectHeight / newImageHeight;
+
+	if (scaleY < 1)
+	{
+		newImageWidth *= scaleY;
+		newImageHeight *= scaleY;
+	}
+
+	*imageWidth = (int)newImageWidth;
+	*imageHeight = (int)newImageHeight;
 }

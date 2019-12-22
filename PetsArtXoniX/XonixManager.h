@@ -48,4 +48,5 @@ public:
 	void SetRightMove();
 	void MoveCircle(HDC);
 	void OnPaint(HDC, RECT);
+	void ZoomImageToFitRect(int*, int*, int, int);
 };
