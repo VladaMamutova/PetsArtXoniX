@@ -25,7 +25,7 @@ namespace PetsArtXoniXTests
 			queue<FieldCuttingHelper::VerticalLine> q2) {
 			if (q1.size() != q2.size())
 				return false;
-			for (size_t i = 0; i < q1.size(); i++) {
+			while(!q1.empty()) {
 				FieldCuttingHelper::VerticalLine line1 = q1.front();
 				FieldCuttingHelper::VerticalLine line2 = q2.front();
 				if (line1.top.x != line2.top.x ||
@@ -33,6 +33,8 @@ namespace PetsArtXoniXTests
 					line1.bottom.x != line2.bottom.x ||
 					line1.bottom.y != line2.bottom.y)
 					return false;
+				q1.pop();
+				q2.pop();
 			}
 			return true;
 		}

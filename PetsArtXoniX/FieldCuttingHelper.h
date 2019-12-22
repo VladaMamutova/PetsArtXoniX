@@ -24,8 +24,8 @@ public:
 		int bottom_left;
 	};
 
-	static queue<VerticalLine> FormVerticalLinesQueue(vector<POINT> points);
 	static void QuickSortPointsByX(vector<POINT>* points, int left, int right);
+	static queue<VerticalLine> FormVerticalLinesQueue(vector<POINT> points);
 	static vector<Rect> SplitIntoRects(vector<POINT> points);
 };
 

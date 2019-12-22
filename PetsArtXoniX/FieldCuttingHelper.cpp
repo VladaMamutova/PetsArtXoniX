@@ -1,5 +1,48 @@
 ﻿#include "FieldCuttingHelper.h"
 
+// Сортирует точки по возрастанию координаты X алгоритмом быстрой сортировки.
+void FieldCuttingHelper::QuickSortPointsByX(vector<POINT> *points, int left, int right)
+{
+	// 1. Выбор опорного элемента (центральный).
+	POINT pivot = points->at((left + right) / 2); // опорный  элемент
+
+	// 2. Разделение массива - перераспределение элементов в массиве таким образом,
+	// что элементы меньше опорного помещаются перед ним, а больше или равные - после.
+	int i = left, j = right;
+	while (i <= j) {
+		// В левой части массива оставляем элементы, которые меньше опорного.
+		while (points->at(i).x < pivot.x) {
+			i++;
+		}
+
+		// В правой части оставляем элементы, которые больше опорного.
+		while (points->at(j).x > pivot.x) {
+			j--;
+		}
+
+		if (i <= j) {
+			POINT temp;
+			temp = points->at(i);
+			points->at(i) = points->at(j);
+			points->at(j) = temp;
+			i++;
+			j--;
+		}
+	};
+
+	// 3. Рекурсия - рекурсивно выполняем первые два шага
+	// к двум подмассивам слева и справа от опорного элемента..
+
+	if (left < j) {
+		QuickSortPointsByX(points, left, j);
+	}
+
+	if (i < right) {
+		QuickSortPointsByX(points, i, right);
+	}
+}
+
+
 // Формирует очередь вертикальных линий последовательно из каждой пары точек.
 queue<FieldCuttingHelper::VerticalLine> FieldCuttingHelper::
 FormVerticalLinesQueue(vector<POINT> points)
@@ -45,62 +88,33 @@ FormVerticalLinesQueue(vector<POINT> points)
 	return queue;
 }
 
-// Сортирует точки по возрастанию координаты X алгоритмом быстрой сортировки.
-void FieldCuttingHelper::QuickSortPointsByX(vector<POINT> *points, int left, int right)
-{	
-	// 1. Выбор опорного элемента (центральный).
-	POINT pivot = points->at((left + right) / 2); // опорный  элемент
-	   
-	// 2. Разделение массива - перераспределение элементов в массиве таким образом,
-	// что элементы меньше опорного помещаются перед ним, а больше или равные - после.
-   	int i = left, j = right;
-	while (i <= j) {
-		// В левой части массива оставляем элементы, которые меньше опорного.
-		while (points->at(i).x < pivot.x) {
-			i++;
-		}
-
-		// В правой части оставляем элементы, которые больше опорного.
-		while (points->at(j).x > pivot.x) {
-			j--;
-		}
-
-		if (i <= j) {
-			POINT temp;
-			temp = points->at(i);
-			points->at(i) = points->at(j);
-			points->at(j) = temp;
-			i++;
-			j--;
-		}
-	};
-
-	// 3. Рекурсия - рекурсивно выполняем первые два шага
-	// к двум подмассивам слева и справа от опорного элемента..
-
-	if (left < j) {
-		QuickSortPointsByX(points, left, j);
-	}
-
-	if (i < right) {
-		QuickSortPointsByX(points, i, right);
-	}
-}
-
-// Разбивает исходную сложную фигуру, представленную в виде массива
+// Разбивает сложную замкнутую фигуру, представленную в виде массива
 // вершин, по прямоугольникам. 
 vector<Rect> FieldCuttingHelper::SplitIntoRects(vector<POINT> points)
 {
 	if (points.size() < 4) {
-		throw "Точки не формируют фигуру из прямоугольников.";
+		throw std::invalid_argument ("Точки не формируют фигуру из прямоугольников.");
 	}
 
 	if (points.size() % 2 != 0) {
-		throw "Число точек должно быть чётным";
+		throw std::invalid_argument("Число точек должно быть чётным");
 	}
 
 	QuickSortPointsByX(&points, 0, points.size() - 1);
 	queue<VerticalLine> lines = FormVerticalLinesQueue(points);
+
+	// Массив сформированных прямоугольников из точек.
+	vector<MyRect> rects;
+	while (!lines.empty()) {
+		// Первая в очереди вертикальная линия -
+		// правая сторона нового прямоугольника.
+		VerticalLine line1 = lines.front();
+		lines.pop();
+		
+		VerticalLine line2 = lines.front();
+
+		
+	}
 
 	return vector<Rect>();
 }
