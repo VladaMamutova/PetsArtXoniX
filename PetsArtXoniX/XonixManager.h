@@ -37,14 +37,14 @@ private:
 	// значение - структура, содержащая пару картинок: заполненную и контур.
 	map <int, PairImages> imagePathes;
 	int level;
+	int enemyCount;
 
 	MainCircle mainCircle;
-	Point startMovementPoint;
-	//vector<EnemyCircle> circles;
+	vector<EnemyCircle> enemyCircles;
 
 	void LoadPetImage();
 	void InitMainCircle(int x, int y);
-	//void InitEnemyCircles();
+	void InitEnemyCircles(Rect bounds);
 public:
 	XonixManager();
 	~XonixManager();
@@ -55,5 +55,6 @@ public:
 	void SetRightMove();
 	void MoveCircle(HDC);
 	void OnPaint(HDC, RECT);
+	void DrawCircle(HDC, SimpleCircle);
 	void ZoomImageToFitRect(int*, int*, int, int);
 };

@@ -1,5 +1,7 @@
 ﻿#include "XonixManager.h"
 #include <math.h>
+#include <time.h>
+
 #pragma comment(lib, "GdiPlus.lib")
 
 using namespace Gdiplus;
@@ -52,6 +54,8 @@ void XonixManager::StartNewGame(int windowWidth, int windowHeight) {
 	y0 = (windowHeight - imageHeight) / 2;
 
 	InitMainCircle(x0 + imageWidth / 2 - mainCircle.GetRadius(), y0 + imageHeight);
+	enemyCount = 1;
+	InitEnemyCircles(Rect(x0, y0, imageWidth, imageHeight));
 
 	// Вычисляем размер поля по количеству ячеек.
 	fieldWidth = imageWidth / CELL_SIZE;
@@ -92,23 +96,18 @@ void XonixManager::LoadPetImage()
 }
 
 void XonixManager::InitMainCircle(int x, int y) {
-	startMovementPoint.X = x;
-	startMovementPoint.Y = y;
 	mainCircle.SetX(x);
 	mainCircle.SetY(y);
 }
 
-//void XonixManager::InitEnemyCircles() {
-//	SimpleCircle mainCircleArea = mainCircle.getCircleArea();
-//	circles = new ArrayList<>();
-//	for (int i = 0; i < ENEMY_CIRCLES_COUNT; i++) {
-//		EnemyCircle circle;
-//		do {
-//			circle = EnemyCircle.getRandomCircle(false);
-//		} while (circle.isIntersect(mainCircleArea));
-//		circles.add(circle);
-//	}
-//}
+void XonixManager::InitEnemyCircles(Rect bounds) {
+	srand(time(NULL)); // С каждым запуском будут генерироваться разные числа.
+	for (int i = 0; i < enemyCount; i++) {
+		int x = bounds.GetLeft() + rand() % bounds.Width;
+		int y = bounds.GetTop() + rand() % bounds.Height;
+		enemyCircles.push_back(EnemyCircle(x, y));
+	}
+}
 
 void XonixManager::SetTopMove() {
 	mainCircle.SetDirection(Direction::Up);
@@ -135,27 +134,18 @@ void XonixManager::MoveCircle(HDC hdc) {
 
 	// Если шарик начал движение, то фиксируем точку начала.
 	if (direction == Direction::None && mainCircle.GetDirection() != Direction::None) {
-		startMovementPoint.X = circleX;
-		startMovementPoint.Y = circleY;
+
 	}
 
 	// Если шарик двигался и прекратил движение, то 
 	if (direction != Direction::None && mainCircle.GetDirection() == Direction::None) {
-		startMovementPoint.X = circleX;
-		startMovementPoint.Y = circleY;
+		
 	}
 
-	Graphics graphics(hdc);
-	Color color = mainCircle.GetColor();
-	SolidBrush brush(color);
-	graphics.FillEllipse(&brush, mainCircle.GetX(), mainCircle.GetY(),
-		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
-
-	Color darkerColor(max(color.GetR() - 100, 0),
-		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
-	Pen pen(darkerColor, 1);
-	graphics.DrawEllipse(&pen, mainCircle.GetX(), mainCircle.GetY(),
-		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+	DrawCircle(hdc, mainCircle);
+	for (int i = 0; i < enemyCircles.size(); i++) {
+		DrawCircle(hdc, enemyCircles[i]);
+	}
 }
 
 void XonixManager::OnPaint(HDC hdc, RECT rect) {
@@ -191,6 +181,22 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	Pen pen(&brush, (REAL)2 * mainCircle.GetRadius());
 	pen.SetAlignment(PenAlignmentInset);
 	graphics.DrawRectangle(&pen, borderRect);
+}
+
+void XonixManager::DrawCircle(HDC hdc, SimpleCircle circle)
+{
+	Graphics graphics(hdc);
+
+	Color color = circle.GetColor();
+	SolidBrush brush(color);
+	graphics.FillEllipse(&brush, circle.GetX(), circle.GetY(),
+		circle.GetRadius() * 2, circle.GetRadius() * 2);
+
+	Color darkerColor(max(color.GetR() - 100, 0),
+		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
+	Pen pen(darkerColor, 1);
+	graphics.DrawEllipse(&pen, circle.GetX(), circle.GetY(),
+		circle.GetRadius() * 2, circle.GetRadius() * 2);
 }
 
 void XonixManager::ZoomImageToFitRect(
