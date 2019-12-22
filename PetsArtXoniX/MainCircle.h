@@ -11,7 +11,9 @@ private:
 public:
 	MainCircle();
 	MainCircle(int x, int y);
-	MainCircle(MainCircle&);
+	MainCircle(int x, int y, int radius);
+	MainCircle(const MainCircle&);
+	MainCircle& operator=(const MainCircle&);
 	void SetDirection(Direction direction);
 	Direction GetDirection();
 	virtual void MoveWithinTheBounds(Rect bounds);

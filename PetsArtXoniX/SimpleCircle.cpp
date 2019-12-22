@@ -22,12 +22,21 @@ SimpleCircle::SimpleCircle(int x, int y, int radius) {
 	color = DEFAULT_COLOR;
 }
 
-SimpleCircle::SimpleCircle(SimpleCircle &circle)
+SimpleCircle::SimpleCircle(const SimpleCircle &circle)
 {
 	this->x = circle.x;
 	this->y = circle.y;
 	this->radius = circle.radius;
 	this->color = circle.color;
+}
+
+SimpleCircle & SimpleCircle::operator=(const SimpleCircle & circle)
+{
+	this->x = circle.x;
+	this->y = circle.y;
+	this->radius = circle.radius;
+	this->color = circle.color;
+	return *this;
 }
 
 SimpleCircle::~SimpleCircle()

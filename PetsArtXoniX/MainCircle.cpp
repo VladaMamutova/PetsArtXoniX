@@ -10,12 +10,27 @@ MainCircle::MainCircle(int x, int y) : SimpleCircle(x, y)
 	SetColor(COLOR);
 }
 
-MainCircle::MainCircle(MainCircle &circle)
+MainCircle::MainCircle(int x, int y, int radius) : SimpleCircle(x, y, radius)
+{
+	SetColor(COLOR);
+}
+
+MainCircle::MainCircle(const MainCircle &circle)
 {
 	this->x = circle.x;
 	this->y = circle.y;
 	this->radius = circle.radius;
 	this->color = circle.color;
+}
+
+MainCircle & MainCircle::operator=(const MainCircle & circle)
+{
+	this->x = circle.x;
+	this->y = circle.y;
+	this->radius = circle.radius;
+	this->color = circle.color;
+
+	return *this;
 }
 
 MainCircle::~MainCircle()
@@ -38,7 +53,7 @@ void MainCircle::MoveWithinTheBounds(Rect bounds) {
 
 	int xDelta = 0;
 	int yDelta = 0;
-	
+
 	switch (direction)
 	{
 	case Up: {
@@ -68,7 +83,7 @@ void MainCircle::MoveWithinTheBounds(Rect bounds) {
 		x = bounds.GetLeft() - 2 * radius;
 		direction = Direction::None;
 	}
-	else if(x + xDelta > bounds.Width) {
+	else if (x + xDelta > bounds.Width) {
 		x = bounds.Width;
 		direction = Direction::None;
 	}

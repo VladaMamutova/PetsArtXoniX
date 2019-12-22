@@ -7,7 +7,7 @@ using namespace Gdiplus;
 class SimpleCircle
 {
 private:
-	const int DEFAULT_RADIUS = 4;
+	const int DEFAULT_RADIUS = 10;
 	const Color DEFAULT_COLOR = Color(0, 0, 0);
 protected:
 	int x;
@@ -18,7 +18,8 @@ public:
 	SimpleCircle();
 	SimpleCircle(int x, int y);
 	SimpleCircle(int x, int y, int radius);
-	SimpleCircle(SimpleCircle&);
+	SimpleCircle(const SimpleCircle&);
+	SimpleCircle& operator=(const SimpleCircle&);
 	~SimpleCircle();
 	int GetX();
 	int GetY();

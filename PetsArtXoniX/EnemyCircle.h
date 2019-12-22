@@ -8,6 +8,8 @@ private:
 public:
 	EnemyCircle();
 	EnemyCircle(int x, int y);
-	EnemyCircle(EnemyCircle&);
+	EnemyCircle(int x, int y, int radius);
+	EnemyCircle(const EnemyCircle&);
+	EnemyCircle& operator=(const EnemyCircle&);
 	~EnemyCircle();
 };
