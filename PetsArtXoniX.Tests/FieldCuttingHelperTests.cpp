@@ -7,31 +7,31 @@
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace PetsArtXoniXTests
-{		
+{
 	TEST_CLASS(FieldCuttingHelperTests)
 	{
 	public:
-		bool CompareVectors(vector<POINT> p1, vector<POINT> p2) {
+		bool CompareVectors(vector<Point> p1, vector<Point> p2) {
 			if (p1.size() != p2.size())
 				return false;
 			for (int i = 0; i < p1.size(); i++) {
-				if (p1[i].x != p2[i].x || p1[i].y != p2[i].y)
+				if (p1[i].X != p2[i].X || p1[i].Y != p2[i].Y)
 					return false;
 			}
 			return true;
 		}
 
-		bool CompareVerticalLineQueue(queue<FieldCuttingHelper::VerticalLine> q1,
-			queue<FieldCuttingHelper::VerticalLine> q2) {
+		bool CompareVerticalLineQueue(queue<VerticalLine> q1,
+			queue<VerticalLine> q2) {
 			if (q1.size() != q2.size())
 				return false;
-			while(!q1.empty()) {
-				FieldCuttingHelper::VerticalLine line1 = q1.front();
-				FieldCuttingHelper::VerticalLine line2 = q2.front();
-				if (line1.top.x != line2.top.x ||
-					line1.top.y != line2.top.y ||
-					line1.bottom.x != line2.bottom.x ||
-					line1.bottom.y != line2.bottom.y)
+			while (!q1.empty()) {
+				VerticalLine line1 = q1.front();
+				VerticalLine line2 = q2.front();
+				if (line1.top.X != line2.top.X ||
+					line1.top.Y != line2.top.Y ||
+					line1.bottom.X != line2.bottom.X ||
+					line1.bottom.Y != line2.bottom.Y)
 					return false;
 				q1.pop();
 				q2.pop();
@@ -42,23 +42,14 @@ namespace PetsArtXoniXTests
 		TEST_METHOD(QuickSortPointsByX1)
 		{
 			// Arrange
-			vector<POINT> points(5);
-			points[0].x = 0;
-			points[0].y = 0;
-			
-			points[1].x = 1;
-			points[1].y = 0;
-			
-			points[2].x = 2;
-			points[2].y = 0;
-			
-			points[3].x = 3;
-			points[3].y = 0;
+			vector<Point> points(5);
+			points[0] = Point(0, 0);
+			points[1] = Point(1, 0);
+			points[2] = Point(2, 0);
+			points[3] = Point(3, 0);
+			points[4] = Point(3, 0);
 
-			points[4].x = 3;
-			points[4].y = 0;
-
-			vector<POINT> expected(5);
+			vector<Point> expected(5);
 			expected[0] = points[0];
 			expected[1] = points[1];
 			expected[2] = points[2];
@@ -75,20 +66,13 @@ namespace PetsArtXoniXTests
 		TEST_METHOD(QuickSortPointsByX2)
 		{
 			// Arrange
-			vector<POINT> points(4);
-			points[0].x = 1;
-			points[0].y = 0;
+			vector<Point> points(4);
+			points[0] = Point(1, 0);
+			points[1] = Point(3, 0);
+			points[2] = Point(0, 0);
+			points[3] = Point(2, 0);
 
-			points[1].x = 3;
-			points[1].y = 0;
-
-			points[2].x = 0;
-			points[2].y = 0;
-
-			points[3].x = 2;
-			points[3].y = 0;
-			
-			vector<POINT> expected(4);
+			vector<Point> expected(4);
 			expected[0] = points[2];
 			expected[1] = points[0];
 			expected[2] = points[3];
@@ -104,23 +88,14 @@ namespace PetsArtXoniXTests
 		TEST_METHOD(QuickSortPointsByX3)
 		{
 			// Arrange
-			vector<POINT> points(5);
-			points[0].x = 4;
-			points[0].y = 0;
+			vector<Point> points(5);
+			points[0] = Point(4, 0);
+			points[1] = Point(5, 0);
+			points[2] = Point(5, 0);
+			points[3] = Point(-5, 0);
+			points[4] = Point(0, 0);
 
-			points[1].x = 5;
-			points[1].y = 0;
-
-			points[2].x = 5;
-			points[2].y = 0;
-
-			points[3].x = -5;
-			points[3].y = 0;
-
-			points[4].x = 0;
-			points[4].y = 0;
-
-			vector<POINT> expected(5);
+			vector<Point> expected(5);
 			expected[0] = points[3];
 			expected[1] = points[4];
 			expected[2] = points[0];
@@ -131,34 +106,22 @@ namespace PetsArtXoniXTests
 			FieldCuttingHelper::QuickSortPointsByX(&points, 0, points.size() - 1);
 
 			// Assert
-			Assert::IsTrue(CompareVectors(expected,  points));
+			Assert::IsTrue(CompareVectors(expected, points));
 		}
 
 		TEST_METHOD(FormVerticalLinesQueue1)
 		{
 			// Arrange
-			vector<POINT> points(6);
+			vector<Point> points(6);
+			points[0] = Point(0, 0);
+			points[1] = Point(0, 5);
+			points[2] = Point(2, 5);
+			points[3] = Point(2, 0);
+			points[4] = Point(5, 4);
+			points[5] = Point(5, 5);
 
-			points[0].x = 0;
-			points[0].y = 0;
-
-			points[1].x = 0;
-			points[1].y = 5;
-
-			points[2].x = 2;
-			points[2].y = 5;
-
-			points[3].x = 2;
-			points[3].y = 0;
-
-			points[4].x = 5;
-			points[4].y = 4;
-
-			points[5].x = 5;
-			points[5].y = 5;
-
-			queue<FieldCuttingHelper::VerticalLine> expected;
-			FieldCuttingHelper::VerticalLine line;
+			queue<VerticalLine> expected;
+			VerticalLine line;
 
 			line.top = points[0];
 			line.bottom = points[1];
@@ -171,10 +134,9 @@ namespace PetsArtXoniXTests
 			line.top = points[4];
 			line.bottom = points[5];
 			expected.push(line);
-			
+
 			// Act
-			queue<FieldCuttingHelper::VerticalLine> actual = 
-				FieldCuttingHelper::FormVerticalLinesQueue(points);
+			queue<VerticalLine> actual = FieldCuttingHelper::FormVerticalLinesQueue(points);
 
 			// Assert
 			Assert::IsTrue(CompareVerticalLineQueue(expected, actual));
@@ -183,22 +145,12 @@ namespace PetsArtXoniXTests
 		TEST_METHOD(FormVerticalLinesQueueThrowsSizeException)
 		{
 			// Arrange
-			vector<POINT> points(5); // размер не кратный двум
-
-			points[0].x = 0;
-			points[0].y = 0;
-
-			points[1].x = 0;
-			points[1].y = 5;
-
-			points[2].x = 2;
-			points[2].y = 5;
-
-			points[3].x = 2;
-			points[3].y = 0;
-
-			points[4].x = 5;
-			points[4].y = 4;
+			vector<Point> points(5); // размер не кратный двум
+			points[0] = Point(0, 0);
+			points[1] = Point(0, 5);
+			points[2] = Point(2, 5);
+			points[3] = Point(2, 0);
+			points[4] = Point(5, 4);
 
 			// Act
 			auto func = [points] { return FieldCuttingHelper::FormVerticalLinesQueue(points); };
@@ -210,26 +162,15 @@ namespace PetsArtXoniXTests
 		TEST_METHOD(FormVerticalLinesQueueThrowsNotVerticalLine)
 		{
 			// Arrange
-			vector<POINT> points(6);
+			vector<Point> points(6);
 
 			// points[0].x != points[1].x - not vertical line
-			points[0].x = 0;
-			points[0].y = 0;
-
-			points[1].x = 1;
-			points[1].y = 5;
-
-			points[2].x = 2;
-			points[2].y = 5;
-
-			points[3].x = 2;
-			points[3].y = 0;
-
-			points[4].x = 5;
-			points[4].y = 4;
-
-			points[5].x = 5;
-			points[5].y = 5;
+			points[0] = Point(0, 0);
+			points[1] = Point(1, 5);
+			points[2] = Point(2, 5);
+			points[3] = Point(2, 0);
+			points[4] = Point(5, 4);
+			points[5] = Point(5, 5);
 
 			// Act
 			auto func = [points] { return FieldCuttingHelper::FormVerticalLinesQueue(points); };
@@ -241,26 +182,15 @@ namespace PetsArtXoniXTests
 		TEST_METHOD(FormVerticalLinesQueueThrowsNotLine)
 		{
 			// Arrange
-			vector<POINT> points(6);
+			vector<Point> points(6);
 
 			// points[0] = points[1] - not line
-			points[0].x = 0;
-			points[0].y = 0;
-
-			points[1].x = 0; 
-			points[1].y = 0;
-
-			points[2].x = 2;
-			points[2].y = 5;
-
-			points[3].x = 2;
-			points[3].y = 0;
-
-			points[4].x = 5;
-			points[4].y = 4;
-
-			points[5].x = 5;
-			points[5].y = 5;
+			points[0] = Point(0, 0);
+			points[1] = Point(0, 0);
+			points[2] = Point(2, 5);
+			points[3] = Point(2, 0);
+			points[4] = Point(5, 4);
+			points[5] = Point(5, 5);
 
 			// Act
 			auto func = [points] { return FieldCuttingHelper::FormVerticalLinesQueue(points); };

@@ -1,4 +1,5 @@
 ﻿#include "XonixManager.h"
+#include "FieldCuttingHelper.h"
 #include <math.h>
 #include <time.h>
 
@@ -9,7 +10,6 @@ using namespace Gdiplus;
 XonixManager::XonixManager()
 {
 	level = 1;
-	mainCircle.SetRadius(CELL_SIZE);
 
 	// Определяем словарь картинок.
 	wchar_t name[LEVEL_COUNT][50] = { L"yorkshire-terrier" };
@@ -21,10 +21,6 @@ XonixManager::XonixManager()
 
 XonixManager::~XonixManager()
 {
-	for (int i = 0; i < fieldHeight; ++i)
-		delete[] fieldCells[i];
-	delete[] fieldCells;
-
 	if (petImage) {
 		delete petImage;
 	}
@@ -38,39 +34,23 @@ void XonixManager::StartNewGame(int windowWidth, int windowHeight) {
 	LoadPetImage();
 
 	// По размеру окна вычисляем размер картинки.
-	int imageWidth = petImage->GetWidth();
-	int imageHeight = petImage->GetHeight();
-	ZoomImageToFitRect(&imageWidth, &imageHeight,
+	width = petImage->GetWidth();
+	height = petImage->GetHeight();
+	ZoomImageToFitRect(&width, &height,
 		windowWidth - 2 * FIELD_MARGIN,
 		windowHeight - 2 * FIELD_MARGIN);
 
-	// Корректируем размеры с учётом размера ячейки поля.
-	imageWidth -= imageWidth % CELL_SIZE;
-	imageHeight -= imageHeight % CELL_SIZE;
+	width -= 2 * BORDER_THICKNESS;
+	height -= 2 * BORDER_THICKNESS;
 
-	// Находим верхний правый отступ от краёв окна так,
+	// Находим верхний левый отступ от краёв окна так,
 	// чтобы картинка размещалась посередине.
-	x0 = (windowWidth - imageWidth) / 2;
-	y0 = (windowHeight - imageHeight) / 2;
+	x0 = (windowWidth - width) / 2;
+	y0 = (windowHeight - height) / 2;
 
-	InitMainCircle(x0 + imageWidth / 2 - mainCircle.GetRadius(), y0 + imageHeight);
+	InitMainCircle(width / 2 - mainCircle.GetRadius(), height);
 	enemyCount = 1;
-	InitEnemyCircles(Rect(x0, y0, imageWidth, imageHeight));
-
-	// Вычисляем размер поля по количеству ячеек.
-	fieldWidth = imageWidth / CELL_SIZE;
-	fieldHeight = imageHeight / CELL_SIZE;
-
-	// Создаём поле с пустыми ячейками.
-	fieldCells = new int*[fieldHeight];
-	for (int i = 0; i < fieldHeight; ++i)
-		fieldCells[i] = new int[fieldWidth];
-
-	for (int i = 0; i < fieldHeight; i++) {
-		for (int j = 0; j < fieldWidth; j++) {
-			fieldCells[i][j] = EMPTY;
-		}
-	}
+	InitEnemyCircles(Gdiplus::Rect(0, 0, width, height));
 }
 
 void XonixManager::LoadPetImage()
@@ -96,62 +76,78 @@ void XonixManager::LoadPetImage()
 }
 
 void XonixManager::InitMainCircle(int x, int y) {
-	mainCircle.SetX(x);
-	mainCircle.SetY(y);
+	mainCircle = MainCircle(x, y, CIRCLE_RADIUS);
 }
 
-void XonixManager::InitEnemyCircles(Rect bounds) {
-	srand(time(NULL)); // С каждым запуском будут генерироваться разные числа.
+void XonixManager::InitEnemyCircles(Gdiplus::Rect bounds) {
+	srand((unsigned)time(NULL)); // С каждым запуском будут генерироваться разные числа.
 	for (int i = 0; i < enemyCount; i++) {
 		int x = bounds.GetLeft() + rand() % bounds.Width;
 		int y = bounds.GetTop() + rand() % bounds.Height;
-		enemyCircles.push_back(EnemyCircle(x, y));
+		enemyCircles.push_back(EnemyCircle(x, y, CIRCLE_RADIUS));
 	}
 }
 
 void XonixManager::SetTopMove() {
 	mainCircle.SetDirection(Direction::Up);
+	AddPointToMainCirclePath();
 }
 
 void XonixManager::SetBottomMove() {
 	mainCircle.SetDirection(Direction::Down);
+	AddPointToMainCirclePath();
 }
 
 void XonixManager::SetLeftMove() {
 	mainCircle.SetDirection(Direction::Left);
+	AddPointToMainCirclePath();
 }
 
 void XonixManager::SetRightMove() {
 	mainCircle.SetDirection(Direction::Right);
+	AddPointToMainCirclePath();
 }
 
-void XonixManager::MoveCircle(HDC hdc) {
+void XonixManager::AddPointToMainCirclePath() {
+	// Добавляем точку текущего положения шарика.
+	mainCirclePath.push_back(Point(mainCircle.GetX(), mainCircle.GetY()));
+}
+
+bool XonixManager::MoveCircle(HDC hdc) {
 	Direction direction = mainCircle.GetDirection();
-	int circleX = mainCircle.GetX();
-	int circleY = mainCircle.GetY();
-	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(x0, y0,
-		x0 + fieldWidth * CELL_SIZE, y0 + fieldHeight * CELL_SIZE));
-
-	// Если шарик начал движение, то фиксируем точку начала.
-	if (direction == Direction::None && mainCircle.GetDirection() != Direction::None) {
-
-	}
-
-	// Если шарик двигался и прекратил движение, то 
-	if (direction != Direction::None && mainCircle.GetDirection() == Direction::None) {
+	int x = mainCircle.GetX();
+	int y = mainCircle.GetY();
+	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(0, 0, width, height));
+	
+	bool finishMovement = false;
+	
+	// Шарик прекратил движение и прошёл путь ненулевой длины..
+	if (mainCircle.GetDirection() == Direction::None && mainCirclePath.size() > 0) {
+		// Фиксируем точку положения шарика.
+		mainCirclePath.push_back(Point(mainCircle.GetX(), mainCircle.GetY()));
 		
+		// Получаем захваченные шариком прямоугольные области.
+		vector<Rect> newCapturedRects = FieldCuttingHelper::SplitIntoRects(mainCirclePath);
+		for (size_t i = 0; i < newCapturedRects.size(); i++) {
+			capturedField.push_back(newCapturedRects[i]);
+		}
+		// Очищаем точки пути.
+		mainCirclePath.clear();
+		finishMovement = true;
 	}
 
 	DrawCircle(hdc, mainCircle);
-	for (int i = 0; i < enemyCircles.size(); i++) {
+	for (size_t i = 0; i < enemyCircles.size(); i++) {
 		DrawCircle(hdc, enemyCircles[i]);
 	}
+
+	return finishMovement;
 }
 
-void XonixManager::OnPaint(HDC hdc, RECT rect) {
+void XonixManager::OnPaint(HDC hdc) {
 	Graphics graphics(hdc);
 
-	graphics.DrawImage(petImageOutline, x0, y0, fieldWidth * CELL_SIZE, fieldHeight * CELL_SIZE);
+	graphics.DrawImage(petImageOutline, x0, y0, width, height);
 
 	// Атрибуты для указания, как будет отрисовываться изображение.
 	//ImageAttributes imAtt;
@@ -163,22 +159,19 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	//graphics.DrawImage(petImage, zoomRect, 0, 0, 
 	//	300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel, &imAtt);
 
-	for (int i = 0; i < fieldHeight; i++)
-	{
-		for (int j = 0; j < fieldWidth; j++) {
-			if (fieldCells[i][j] == FILLED)
-			{
-				Gdiplus::Rect zoomRect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-				graphics.DrawImage(petImage, zoomRect, 0, 0, CELL_SIZE * petImage->GetWidth() / fieldWidth,
-					CELL_SIZE * petImage->GetHeight() / fieldHeight, UnitPixel);
-			}
-		}
+	for (size_t i = 0; i < capturedField.size(); i++) {
+		graphics.DrawImage(petImage, Rect(capturedField[i].X + x0, capturedField[i].Y + y0, capturedField[i].Width, capturedField[i].Height),
+			capturedField[i].X * petImage->GetWidth() / width,
+			capturedField[i].Y * petImage->GetHeight() / height,
+			capturedField[i].Width * petImage->GetWidth() / width,
+			capturedField[i].Height * petImage->GetHeight() / height, UnitPixel);
 	}
 
-	Rect borderRect(x0 - 2 * mainCircle.GetRadius(), y0 - 2 * mainCircle.GetRadius(),
-		fieldWidth * CELL_SIZE + 4 * mainCircle.GetRadius(), fieldHeight * CELL_SIZE + 4 * mainCircle.GetRadius());
+	// Рисуем границу картинки.
+	Rect borderRect(x0 - BORDER_THICKNESS, y0 - BORDER_THICKNESS,
+		width + 2 * BORDER_THICKNESS, height + 2 * BORDER_THICKNESS);
 	LinearGradientBrush brush(borderRect, Color(255, 150, 0), Color(255, 170, 0), LinearGradientModeForwardDiagonal);
-	Pen pen(&brush, (REAL)2 * mainCircle.GetRadius());
+	Pen pen(&brush, (REAL)BORDER_THICKNESS);
 	pen.SetAlignment(PenAlignmentInset);
 	graphics.DrawRectangle(&pen, borderRect);
 }
@@ -189,13 +182,13 @@ void XonixManager::DrawCircle(HDC hdc, SimpleCircle circle)
 
 	Color color = circle.GetColor();
 	SolidBrush brush(color);
-	graphics.FillEllipse(&brush, circle.GetX(), circle.GetY(),
+	graphics.FillEllipse(&brush, x0 + circle.GetX(), y0 + circle.GetY(),
 		circle.GetRadius() * 2, circle.GetRadius() * 2);
 
 	Color darkerColor(max(color.GetR() - 100, 0),
 		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
 	Pen pen(darkerColor, 1);
-	graphics.DrawEllipse(&pen, circle.GetX(), circle.GetY(),
+	graphics.DrawEllipse(&pen, x0 + circle.GetX(), y0 + circle.GetY(),
 		circle.GetRadius() * 2, circle.GetRadius() * 2);
 }
 

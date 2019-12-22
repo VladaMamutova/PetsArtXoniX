@@ -96,20 +96,33 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	}
 	case WM_PAINT: {
 		hdc = BeginPaint(hWnd, &ps);
-		
+		ps.fErase = false;
+
 		// Получаем размер экрана.
 		RECT rect;
 		GetClientRect(hWnd, &rect);
 
+		// Двойная буферизация.
+		HDC buffHdc = CreateCompatibleDC(hdc);
+		HBITMAP buffHbm = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
+		HANDLE buffHan = SelectObject(buffHdc, buffHbm);
+
 		// Заливаем фон с помощью градиентной кисти.
-		Graphics graphics(hdc);
+		Graphics graphics(buffHdc);
 		Rect bounds(0, 0, rect.right, rect.bottom);
 		LinearGradientBrush brush(bounds, Color(100, 200, 0), Color(200, 200, 0),
 			LinearGradientModeForwardDiagonal);
 		graphics.FillRectangle(&brush, bounds);
-		
+
 		// Перерисовываем все объекты в игре.
-		xonixManager->OnPaint(hdc, rect);
+		xonixManager->OnPaint(buffHdc);
+
+		BitBlt(hdc, 0, 0, rect.right, rect.bottom, buffHdc, 0, 0, SRCCOPY);
+
+		// Освобождаем память.
+		SelectObject(buffHdc, buffHan);
+		DeleteObject(buffHbm);
+		DeleteObject(buffHdc);
 
 		EndPaint(hWnd, &ps);
 
@@ -140,12 +153,13 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 }
 
 DWORD WINAPI DrawCirclesProc(LPVOID hWnd) {
-	RECT rect;
 	HDC hdc = GetDC((HWND)hWnd);
-	int y = 0;
 	while (true) {
 		while (gameStarted) {
-			xonixManager->MoveCircle(hdc);
+			if (xonixManager->MoveCircle(hdc)) {
+				InvalidateRect((HWND)hWnd, NULL, TRUE);
+				UpdateWindow((HWND)hWnd);
+			}
 			Sleep(3);
 		}
 		Sleep(100);

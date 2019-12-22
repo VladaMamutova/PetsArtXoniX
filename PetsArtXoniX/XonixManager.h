@@ -12,25 +12,22 @@ using namespace Gdiplus;
 
 #define LEVEL_COUNT 1
 #define FIELD_MARGIN 30
-#define CELL_SIZE 4
+#define CIRCLE_RADIUS 4
+#define BORDER_THICKNESS CIRCLE_RADIUS * 2
 
 class XonixManager
 {
 private:
-	enum FieldCellState {
-		EMPTY,
-		MARKED,
-		FILLED	
-	};
-
-	int x0;
-	int y0;
-	int fieldWidth;
-	int fieldHeight;
-	int** fieldCells;
-
 	Image *petImage; // Текущая цветная заполненная картинка.
 	Image *petImageOutline; // Текущая картинка-контур.
+	
+	// Верхний левый угол картинки.
+	int x0;
+	int y0;
+
+	// Размер картинки.
+	int width;
+	int height;
 
 	// Словарь картинок:
 	// ключ - номер уровня,
@@ -41,6 +38,9 @@ private:
 
 	MainCircle mainCircle;
 	vector<EnemyCircle> enemyCircles;
+
+	vector<Point> mainCirclePath;
+	vector<Rect> capturedField;
 
 	void LoadPetImage();
 	void InitMainCircle(int x, int y);
@@ -53,8 +53,9 @@ public:
 	void SetBottomMove();
 	void SetLeftMove();
 	void SetRightMove();
-	void MoveCircle(HDC);
-	void OnPaint(HDC, RECT);
+	bool MoveCircle(HDC);
+	void OnPaint(HDC);
 	void DrawCircle(HDC, SimpleCircle);
+	void AddPointToMainCirclePath();
 	void ZoomImageToFitRect(int*, int*, int, int);
 };
