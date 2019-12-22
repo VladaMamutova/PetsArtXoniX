@@ -38,7 +38,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 	int width = 450;
 	int height = 580;
 
-	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPEDWINDOW,
+	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPED |
+		WS_CAPTION | WS_SYSMENU,
 		GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2,
 		GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2,
 		width, height, NULL, NULL, hInstance, NULL);
@@ -64,8 +65,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_CREATE: {
 		RECT rect;
 		GetClientRect(hWnd, &rect);
-		xonixManager->StartNewGame(Rect(0, 0, 
-			rect.right - rect.left, rect.bottom - rect.top));
+		xonixManager->StartNewGame(rect.right - rect.left, rect.bottom - rect.top);
 		drawCirclesThread = CreateThread(NULL, 0, DrawCirclesProc, (LPVOID)hWnd, 0, NULL);
 		gameStarted = true;
 		break;
@@ -145,10 +145,8 @@ DWORD WINAPI DrawCirclesProc(LPVOID hWnd) {
 	int y = 0;
 	while (true) {
 		while (gameStarted) {
-			if (GetClientRect((HWND)hWnd, &rect)) {
-				xonixManager->MoveCircle(hdc, rect);
-				Sleep(3);
-			}
+			xonixManager->MoveCircle(hdc);
+			Sleep(3);
 		}
 		Sleep(100);
 	}

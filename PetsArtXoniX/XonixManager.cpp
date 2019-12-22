@@ -18,6 +18,10 @@ XonixManager::XonixManager()
 
 XonixManager::~XonixManager()
 {
+	for (int i = 0; i < width; ++i)
+		delete[] field[i];
+	delete[] field;
+
 	if (petImage) {
 		delete petImage;
 	}
@@ -26,34 +30,38 @@ XonixManager::~XonixManager()
 	}
 }
 
-void XonixManager::StartNewGame(Gdiplus::Rect rect) {
+void XonixManager::StartNewGame(int windowWidth, int windowHeight) {
 	level = 1;
 	LoadPetImage();
 
-	int padding = 30;
-	double imageWidth = petImage->GetWidth();
-	double imageHeight = petImage->GetHeight();
-	double windowWidth = rect.Width - padding * 2;
-	double windowHeight = rect.Height - padding * 2;
+	windowWidth -= FIELD_MARGIN * 2;
+	windowHeight -= FIELD_MARGIN * 2;
+	
+	// Находим размеры картинки и поля при пропорциональном масшабировании.
+	double scaleX = (double)windowWidth / petImage->GetWidth();
 
-	double scaleX = windowWidth / imageWidth;
+	double imageWidth = petImage->GetWidth() * scaleX;
+	double imageHeight = petImage->GetHeight() * scaleX;
 
-	double newWidth = imageWidth * scaleX;
-	double newHeight = imageHeight * scaleX;
-
-	double scaleY = windowHeight / newHeight;
+	double scaleY = (double)windowHeight / imageHeight;
 
 	if (scaleY < 1)
 	{
-		newWidth *= scaleY;
-		newHeight *= scaleY;
+		imageWidth *= scaleY;
+		imageHeight *= scaleY;
 	}
 
-	int x = (int)(rect.GetRight() - newWidth) / 2;
-	int y = (int)(rect.GetBottom() - newHeight) / 2;
+	width = (int)imageWidth;
+	height = (int)imageHeight;
 
-	InitMainCircle(x + (int)(newWidth / 2) - mainCircle.GetRadius(),
-		y + (int)newHeight);
+	x0 = (windowWidth + FIELD_MARGIN * 2 - width) / 2;
+	y0 = (windowHeight + FIELD_MARGIN * 2 - height) / 2;
+
+	field = new int*[width];
+	for (int i = 0; i < width; ++i)
+		field[i] = new int[height];
+	
+	InitMainCircle(x0 + width / 2 - mainCircle.GetRadius(), y0 + height);
 }
 
 void XonixManager::LoadPetImage()
@@ -113,33 +121,11 @@ void XonixManager::SetRightMove() {
 	mainCircle.SetDirection(Direction::Right);
 }
 
-void XonixManager::MoveCircle(HDC hdc, RECT rect) {
-	int padding = 30;
-	double imageWidth = petImage->GetWidth();
-	double imageHeight = petImage->GetHeight();
-	double windowWidth = rect.right - rect.left - padding * 2;
-	double windowHeight = rect.bottom - rect.top - padding * 2;
-
-	double scaleX = windowWidth / imageWidth;
-
-	double newWidth = imageWidth * scaleX;
-	double newHeight = imageHeight * scaleX;
-
-	double scaleY = windowHeight / newHeight;
-
-	if (scaleY < 1)
-	{
-		newWidth *= scaleY;
-		newHeight *= scaleY;
-	}
-
-	int x = (int)(rect.right - newWidth) / 2;
-	int y = (int)(rect.bottom - newHeight) / 2;
-
+void XonixManager::MoveCircle(HDC hdc) {
 	Direction direction = mainCircle.GetDirection();
 	int circleX = mainCircle.GetX();
 	int circleY = mainCircle.GetY();
-	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(x, y, x + (int)newWidth, y + (int)newHeight));
+	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(x0, y0, x0 + width, y0 + height));
 
 	// Если шарик начал движение, то фиксируем точку начала.
 	if (direction == Direction::None && mainCircle.GetDirection() != Direction::None) {
@@ -167,34 +153,9 @@ void XonixManager::MoveCircle(HDC hdc, RECT rect) {
 }
 
 void XonixManager::OnPaint(HDC hdc, RECT rect) {
-	// Пропорционально масштабируем картинку.
-
 	Graphics graphics(hdc);
-
-	int padding = 30;
-	double imageWidth = petImage->GetWidth();
-	double imageHeight = petImage->GetHeight();
-	double windowWidth = rect.right - rect.left - padding * 2;
-	double windowHeight = rect.bottom - rect.top - padding * 2;
-
-	double scaleX = windowWidth / imageWidth;
-
-	double newWidth = imageWidth * scaleX;
-	double newHeight = imageHeight * scaleX;
-
-	double scaleY = windowHeight / newHeight;
-
-	if (scaleY < 1)
-	{
-		newWidth *= scaleY;
-		newHeight *= scaleY;
-	}
-
-	int x = (int)(rect.right - newWidth) / 2;
-	int y = (int)(rect.bottom - newHeight) / 2;
 	
-	graphics.DrawImage(petImageOutline, x, y,
-		(int)newWidth, (int)newHeight);
+	graphics.DrawImage(petImageOutline, x0, y0, width, height);
 
 	// Атрибуты для указания, как будет отрисовываться изображение.
 	//ImageAttributes imAtt;
@@ -206,11 +167,11 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	//graphics.DrawImage(petImage, zoomRect, 0, 0, 
 	//	300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel, &imAtt);
 
-	Gdiplus::Rect zoomRect(x, y, 300, 300);
+	Gdiplus::Rect zoomRect(x0, y0, 300, 300);
 	graphics.DrawImage(petImage, zoomRect, 0, 0, 
-		(int)(300 * imageWidth/newWidth), (int)(300 * imageHeight/ newHeight), UnitPixel);
-	Rect borderRect(x - 2 * mainCircle.GetRadius(), y - 2 * mainCircle.GetRadius(),
-		(int)newWidth + 4 * mainCircle.GetRadius(), (int)newHeight + 4 * mainCircle.GetRadius());
+		300 * petImage->GetWidth()/width, 300 * petImage->GetHeight()/ height, UnitPixel);
+	Rect borderRect(x0 - 2 * mainCircle.GetRadius(), y0 - 2 * mainCircle.GetRadius(),
+		width + 4 * mainCircle.GetRadius(), height + 4 * mainCircle.GetRadius());
 	LinearGradientBrush brush(borderRect, Color(255, 150, 0), Color(255, 170, 0), LinearGradientModeForwardDiagonal);
 	Pen pen(&brush, (REAL)2 * mainCircle.GetRadius());
 	pen.SetAlignment(PenAlignmentInset);
