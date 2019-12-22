@@ -7,6 +7,7 @@ using namespace Gdiplus;
 XonixManager::XonixManager()
 {
 	level = 1;
+	mainCircle.SetRadius(CELL_SIZE);
 
 	// Определяем словарь картинок.
 	wchar_t name[LEVEL_COUNT][50] = { L"yorkshire-terrier" };
@@ -18,9 +19,9 @@ XonixManager::XonixManager()
 
 XonixManager::~XonixManager()
 {
-	for (int i = 0; i < width; ++i)
-		delete[] field[i];
-	delete[] field;
+	for (int i = 0; i < fieldHeight; ++i)
+		delete[] fieldCells[i];
+	delete[] fieldCells;
 
 	if (petImage) {
 		delete petImage;
@@ -34,20 +35,38 @@ void XonixManager::StartNewGame(int windowWidth, int windowHeight) {
 	level = 1;
 	LoadPetImage();
 
-	width = petImage->GetWidth();
-	height = petImage->GetHeight();
-	ZoomImageToFitRect(&width, &height, 
+	// По размеру окна вычисляем размер картинки.
+	int imageWidth = petImage->GetWidth();
+	int imageHeight = petImage->GetHeight();
+	ZoomImageToFitRect(&imageWidth, &imageHeight,
 		windowWidth - 2 * FIELD_MARGIN,
 		windowHeight - 2 * FIELD_MARGIN);
 
-	x0 = (windowWidth - width) / 2;
-	y0 = (windowHeight - height) / 2;
+	// Корректируем размеры с учётом размера ячейки поля.
+	imageWidth -= imageWidth % CELL_SIZE;
+	imageHeight -= imageHeight % CELL_SIZE;
 
-	field = new int*[width];
-	for (int i = 0; i < width; ++i)
-		field[i] = new int[height];
-	
-	InitMainCircle(x0 + width / 2 - mainCircle.GetRadius(), y0 + height);
+	// Находим верхний правый отступ от краёв окна так,
+	// чтобы картинка размещалась посередине.
+	x0 = (windowWidth - imageWidth) / 2;
+	y0 = (windowHeight - imageHeight) / 2;
+
+	InitMainCircle(x0 + imageWidth / 2 - mainCircle.GetRadius(), y0 + imageHeight);
+
+	// Вычисляем размер поля по количеству ячеек.
+	fieldWidth = imageWidth / CELL_SIZE;
+	fieldHeight = imageHeight / CELL_SIZE;
+
+	// Создаём поле с пустыми ячейками.
+	fieldCells = new int*[fieldHeight];
+	for (int i = 0; i < fieldHeight; ++i)
+		fieldCells[i] = new int[fieldWidth];
+
+	for (int i = 0; i < fieldHeight; i++) {
+		for (int j = 0; j < fieldWidth; j++) {
+			fieldCells[i][j] = EMPTY;
+		}
+	}
 }
 
 void XonixManager::LoadPetImage()
@@ -111,7 +130,8 @@ void XonixManager::MoveCircle(HDC hdc) {
 	Direction direction = mainCircle.GetDirection();
 	int circleX = mainCircle.GetX();
 	int circleY = mainCircle.GetY();
-	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(x0, y0, x0 + width, y0 + height));
+	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(x0, y0,
+		x0 + fieldWidth * CELL_SIZE, y0 + fieldHeight * CELL_SIZE));
 
 	// Если шарик начал движение, то фиксируем точку начала.
 	if (direction == Direction::None && mainCircle.GetDirection() != Direction::None) {
@@ -140,8 +160,8 @@ void XonixManager::MoveCircle(HDC hdc) {
 
 void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	Graphics graphics(hdc);
-	
-	graphics.DrawImage(petImageOutline, x0, y0, width, height);
+
+	graphics.DrawImage(petImageOutline, x0, y0, fieldWidth * CELL_SIZE, fieldHeight * CELL_SIZE);
 
 	// Атрибуты для указания, как будет отрисовываться изображение.
 	//ImageAttributes imAtt;
@@ -153,11 +173,20 @@ void XonixManager::OnPaint(HDC hdc, RECT rect) {
 	//graphics.DrawImage(petImage, zoomRect, 0, 0, 
 	//	300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel, &imAtt);
 
-	Gdiplus::Rect zoomRect(x0, y0, 300, 300);
-	graphics.DrawImage(petImage, zoomRect, 0, 0, 
-		300 * petImage->GetWidth()/width, 300 * petImage->GetHeight()/ height, UnitPixel);
+	for (int i = 0; i < fieldHeight; i++)
+	{
+		for (int j = 0; j < fieldWidth; j++) {
+			if (fieldCells[i][j] == FILLED)
+			{
+				Gdiplus::Rect zoomRect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+				graphics.DrawImage(petImage, zoomRect, 0, 0, CELL_SIZE * petImage->GetWidth() / fieldWidth,
+					CELL_SIZE * petImage->GetHeight() / fieldHeight, UnitPixel);
+			}
+		}
+	}
+
 	Rect borderRect(x0 - 2 * mainCircle.GetRadius(), y0 - 2 * mainCircle.GetRadius(),
-		width + 4 * mainCircle.GetRadius(), height + 4 * mainCircle.GetRadius());
+		fieldWidth * CELL_SIZE + 4 * mainCircle.GetRadius(), fieldHeight * CELL_SIZE + 4 * mainCircle.GetRadius());
 	LinearGradientBrush brush(borderRect, Color(255, 150, 0), Color(255, 170, 0), LinearGradientModeForwardDiagonal);
 	Pen pen(&brush, (REAL)2 * mainCircle.GetRadius());
 	pen.SetAlignment(PenAlignmentInset);

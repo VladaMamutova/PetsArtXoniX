@@ -12,15 +12,22 @@ using namespace Gdiplus;
 
 #define LEVEL_COUNT 1
 #define FIELD_MARGIN 30
+#define CELL_SIZE 4
 
 class XonixManager
 {
 private:
+	enum FieldCellState {
+		EMPTY,
+		MARKED,
+		FILLED	
+	};
+
 	int x0;
 	int y0;
-	int width;
-	int height;
-	int** field;
+	int fieldWidth;
+	int fieldHeight;
+	int** fieldCells;
 
 	Image *petImage; // Текущая цветная заполненная картинка.
 	Image *petImageOutline; // Текущая картинка-контур.
