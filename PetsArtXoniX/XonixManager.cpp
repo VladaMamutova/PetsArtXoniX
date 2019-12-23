@@ -110,7 +110,7 @@ void XonixManager::SetRightMove() {
 
 void XonixManager::AddPointToMainCirclePath() {
 	// Добавляем точку текущего положения шарика.
-	mainCirclePath.push_back(Point(mainCircle.GetX(), mainCircle.GetY()));
+	mainCirclePath.push_back(Point(max(mainCircle.GetX(), 0), max(mainCircle.GetY(), 0)));
 }
 
 bool XonixManager::MoveCircle(HDC hdc) {
@@ -124,8 +124,16 @@ bool XonixManager::MoveCircle(HDC hdc) {
 	// Шарик прекратил движение и прошёл путь ненулевой длины..
 	if (mainCircle.GetDirection() == Direction::None && mainCirclePath.size() > 0) {
 		// Фиксируем точку положения шарика.
-		mainCirclePath.push_back(Point(mainCircle.GetX(), mainCircle.GetY()));
+		AddPointToMainCirclePath();
 		
+		vector<Point> connectingPoints =
+			FieldCuttingHelper::GetMinConnectingPoints(mainCirclePath[0],
+				mainCirclePath[mainCirclePath.size() - 1],
+				Gdiplus::Rect(0, 0, width, height));
+		for (size_t i = 0; i < connectingPoints.size(); i++) {
+			mainCirclePath.push_back(connectingPoints[i]);
+		}
+
 		// Получаем захваченные шариком прямоугольные области.
 		vector<Rect> newCapturedRects = FieldCuttingHelper::SplitIntoRects(mainCirclePath);
 		for (size_t i = 0; i < newCapturedRects.size(); i++) {

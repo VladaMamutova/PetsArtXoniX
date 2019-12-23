@@ -44,7 +44,7 @@ struct MyRect
 class FieldCuttingHelper
 {
 public:
-	static vector<Point> GetBottomConnectionPoints(Point startPoint, Point endPoint, Rect bounds);
+	static vector<Point> GetMinConnectingPoints(Point startPoint, Point endPoint, Rect bounds);
 	static void QuickSortPointsByX(vector<Point>* points, int left, int right);
 	static queue<VerticalLine> FormVerticalLinesQueue(vector<Point> points);
 	//static VerticalLinePositions GetVerticalLineRelativePosition(VerticalLine, VerticalLine);

@@ -12,6 +12,7 @@ EnemyCircle::EnemyCircle(int x, int y) : SimpleCircle(x, y)
 
 EnemyCircle::EnemyCircle(int x, int y, int radius) : SimpleCircle(x, y, radius)
 {
+	SetColor(COLOR);
 }
 
 EnemyCircle::EnemyCircle(const EnemyCircle &circle)

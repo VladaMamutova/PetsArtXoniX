@@ -1,7 +1,81 @@
 ﻿#include "FieldCuttingHelper.h"
 
-vector<Point> FieldCuttingHelper::GetBottomConnectionPoints(Point startPoint, Point endPoint, Rect bounds) {
-	return vector<Point>();
+vector<Point> FieldCuttingHelper::GetMinConnectingPoints(Point startPoint, Point endPoint, Rect bounds) {
+	vector<Point> points;
+	if (startPoint.X == endPoint.X || startPoint.Y == endPoint.Y) {
+		return points;
+	}
+	
+	Point leftTop = Point(bounds.X, bounds.Y);
+	Point rightTop = Point(bounds.X + bounds.Width, bounds.Y);
+	Point leftBottom = Point(bounds.X, bounds.Y + bounds.Height);
+	Point rightBottom = Point(bounds.X + bounds.Width, bounds.Y + bounds.Height);
+	
+	if (startPoint.X == bounds.X) {
+		points.push_back(leftBottom);
+		if (leftBottom.X == endPoint.X || leftBottom.Y == endPoint.Y) {
+			return points;
+		}
+		points.push_back(rightBottom);
+		if (rightBottom.X == endPoint.X || rightBottom.Y == endPoint.Y) {
+			return points;
+		}
+		else {
+			points.clear();
+			points.push_back(leftTop);
+			return points;
+		}
+	}
+
+	if (startPoint.X == bounds.X + bounds.Width) {
+		points.push_back(rightBottom);
+		if (rightBottom.X == endPoint.X || rightBottom.Y == endPoint.Y) {
+			return points;
+		}
+		points.push_back(leftBottom);
+		if (leftBottom.X == endPoint.X || leftBottom.Y == endPoint.Y) {
+			return points;
+		}
+		else {
+			points.clear();
+			points.push_back(rightTop);
+			return points;
+		}
+	}
+
+	if (startPoint.Y == bounds.Y) {
+		points.push_back(leftTop);
+		if (leftTop.X == endPoint.X || leftTop.Y == endPoint.Y) {
+			return points;
+		}
+		points.push_back(leftBottom);
+		if (leftBottom.X == endPoint.X || leftBottom.Y == endPoint.Y) {
+			return points;
+		}
+		else {
+			points.clear();
+			points.push_back(rightTop);
+			return points;
+		}
+	}
+
+	if (startPoint.Y == bounds.Y + bounds.Height) {
+		points.push_back(leftBottom);
+		if (leftBottom.X == endPoint.X || leftBottom.Y == endPoint.Y) {
+			return points;
+		}
+		points.push_back(leftTop);
+		if (leftTop.X == endPoint.X || leftTop.Y == endPoint.Y) {
+			return points;
+		}
+		else {
+			points.clear();
+			points.push_back(rightBottom);
+			return points;
+		}
+	}
+
+	return points;
 }
 
 // Сортирует точки по возрастанию координаты X алгоритмом быстрой сортировки.
