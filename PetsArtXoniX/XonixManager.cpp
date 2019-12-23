@@ -160,7 +160,9 @@ void XonixManager::OnPaint(HDC hdc) {
 	//	300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel, &imAtt);
 
 	for (size_t i = 0; i < capturedField.size(); i++) {
-		graphics.DrawImage(petImage, Rect(capturedField[i].X + x0, capturedField[i].Y + y0, capturedField[i].Width, capturedField[i].Height),
+		graphics.DrawImage(petImage, Rect(
+			capturedField[i].X + x0, capturedField[i].Y + y0,
+			capturedField[i].Width, capturedField[i].Height),
 			capturedField[i].X * petImage->GetWidth() / width,
 			capturedField[i].Y * petImage->GetHeight() / height,
 			capturedField[i].Width * petImage->GetWidth() / width,

@@ -112,25 +112,35 @@ vector<Rect> FieldCuttingHelper::SplitIntoRects(vector<Point> points)
 	VerticalLine line2;
 	Point line2Top;
 	Point line2Bottom;
-	while (!lines.empty()) {
+	while (lines.size() > 1) {
 		// Первая в очереди вертикальная линия -
 		// правая сторона нового прямоугольника.
 		line1 = lines.front();
 		lines.pop();
 		line2 = lines.front();
 
-		if (line1.top.Y == line2.top.Y) { // top совпадает
-			//if (line1.bottom.Y > line2.bottom.Y) { // line1.bottom ниже 
-				line2.bottom.Y = line1.bottom.Y;
+		if (line1.top.Y == line2.top.Y) { // top совпадают
+			line2.bottom.Y = line1.bottom.Y;
 
-				lines.front().top = lines.front().bottom;
-				lines.front().bottom = line2.bottom;
-			//}
+			lines.front().top = lines.front().bottom;
+			lines.front().bottom = line2.bottom;
 		}
-		else if (line1.bottom.Y == line2.bottom.Y) { // bottom совпадает
+		else if (line1.bottom.Y == line2.bottom.Y) { // bottom совпадают
 			line2.top.Y = line1.top.Y;
 
 			lines.front().bottom = lines.front().top;
+			lines.front().top = line2.top;
+		}
+		else if (line1.top.Y == line2.bottom.Y) { // top совпадает c bottom
+			line2.top.Y = line1.top.Y;
+			line2.bottom.Y = line1.bottom.Y;
+
+			lines.front().bottom = line2.bottom;
+		}
+		else if (line1.bottom.Y == line2.top.Y) { // bottom совпадает c top
+			line2.top.Y = line1.top.Y;
+			line2.bottom.Y = line1.bottom.Y;
+
 			lines.front().top = line2.top;
 		}
 
@@ -174,9 +184,9 @@ vector<Rect> FieldCuttingHelper::SplitIntoRects(vector<Point> points)
 		//}
 
 		//rects.push_back(MyRect(line1.top, line2.top, line2.bottom, line1.bottom));
-
-		return rects;
 	}
+
+	return rects;
 }
 
 //VerticalLinePositions FieldCuttingHelper::GetVerticalLineRelativePosition(VerticalLine line1, VerticalLine line2) {
