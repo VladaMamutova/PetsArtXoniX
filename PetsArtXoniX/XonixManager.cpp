@@ -2,35 +2,23 @@
 #include "FieldCuttingHelper.h"
 #include <math.h>
 #include <time.h>
+#include <stack>
 
 #pragma comment(lib, "GdiPlus.lib")
 
 using namespace Gdiplus;
 
-XonixManager::XonixManager()
+XonixManager::XonixManager(int windowWidth, int windowHeight)
 {
 	level = 1;
+	isGameOver = false;
 
 	// Определяем словарь картинок.
 	wchar_t name[LEVEL_COUNT][50] = { L"yorkshire-terrier" };
 	for (int i = 1; i <= LEVEL_COUNT; i++) {
 		swprintf_s(imagePathes[i].Filled, L"%ls.jpg", name[i - 1]);
-		swprintf_s(imagePathes[i].Outline, L"%ls-outline.jpg", name[i - 1]);
+		swprintf_s(imagePathes[i].Outline, L"%ls.jpg", name[i - 1]);
 	}
-}
-
-XonixManager::~XonixManager()
-{
-	if (petImage) {
-		delete petImage;
-	}
-	if (petImageOutline) {
-		delete petImageOutline;
-	}
-}
-
-void XonixManager::StartNewGame(int windowWidth, int windowHeight) {
-	level = 1;
 	LoadPetImage();
 
 	// По размеру окна вычисляем размер картинки.
@@ -43,14 +31,75 @@ void XonixManager::StartNewGame(int windowWidth, int windowHeight) {
 	width -= 2 * BORDER_THICKNESS;
 	height -= 2 * BORDER_THICKNESS;
 
+	// Корректируем размеры с учётом размера ячейки поля.
+	width -= width % CELL_SIZE;
+	height -= height % CELL_SIZE;
+
 	// Находим верхний левый отступ от краёв окна так,
 	// чтобы картинка размещалась посередине.
 	x0 = (windowWidth - width) / 2;
 	y0 = (windowHeight - height) / 2;
 
-	InitMainCircle(width / 2 - mainCircle.GetRadius(), height);
+	// Вычисляем размер поля по количеству ячеек.
+	fieldWidth = width / CELL_SIZE;
+	fieldHeight = height / CELL_SIZE;
+
+	// Создаём поле с пустыми ячейками.
+	fieldCells = new int*[fieldHeight];
+	for (int i = 0; i < fieldHeight; ++i)
+		fieldCells[i] = new int[fieldWidth];
+
+	for (int i = 0; i < fieldHeight; i++) {
+		for (int j = 0; j < fieldWidth; j++) {
+			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
+				fieldCells[i][j] = 1;
+			else fieldCells[i][j] = 0;//EMPTY;
+		}
+	}
+
 	enemyCount = 1;
-	InitEnemyCircles(Gdiplus::Rect(0, 0, width, height));
+}
+
+XonixManager::~XonixManager()
+{
+	for (int i = 0; i < fieldHeight; ++i)
+		delete[] fieldCells[i];
+	delete[] fieldCells;
+
+	if (petImage) {
+		delete petImage;
+	}
+	if (petImageOutline) {
+		delete petImageOutline;
+	}
+}
+
+bool XonixManager::IsGameOver()
+{
+	return isGameOver;
+}
+
+bool XonixManager::IsAWin()
+{
+	return isAWin;
+}
+
+void XonixManager::StartNewGame() {
+	isAWin = false;
+	isGameOver = false;
+	enemyPercentage = 0;
+	level = 1;
+	enemyCount = 1;
+	for (int i = 0; i < fieldHeight; i++) {
+		for (int j = 0; j < fieldWidth; j++) {
+			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
+				fieldCells[i][j] = 1;
+			else fieldCells[i][j] = 0;//EMPTY;
+		}
+	}
+
+	InitMainCircle(fieldWidth / 2 - mainCircle.GetRadius() - 1, fieldHeight - 1);
+	InitEnemyCircles(Gdiplus::Rect(0, 0, fieldWidth - 1, fieldHeight - 1));
 }
 
 void XonixManager::LoadPetImage()
@@ -82,9 +131,7 @@ void XonixManager::InitMainCircle(int x, int y) {
 void XonixManager::InitEnemyCircles(Gdiplus::Rect bounds) {
 	srand((unsigned)time(NULL)); // С каждым запуском будут генерироваться разные числа.
 	for (int i = 0; i < enemyCount; i++) {
-		int x = bounds.GetLeft() + rand() % bounds.Width;
-		int y = bounds.GetTop() + rand() % bounds.Height;
-		enemyCircles.push_back(EnemyCircle(x, y, CIRCLE_RADIUS));
+		enemyCircles.push_back(EnemyCircle::GetRandomCircle(CIRCLE_RADIUS, bounds));
 	}
 }
 
@@ -114,42 +161,91 @@ void XonixManager::AddPointToMainCirclePath() {
 }
 
 bool XonixManager::MoveCircle(HDC hdc) {
+	if (isGameOver) return false;
+
 	Direction direction = mainCircle.GetDirection();
-	int x = mainCircle.GetX();
-	int y = mainCircle.GetY();
-	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(0, 0, width, height));
-	
 	bool finishMovement = false;
-	
-	// Шарик прекратил движение и прошёл путь ненулевой длины..
-	if (mainCircle.GetDirection() == Direction::None && mainCirclePath.size() > 0) {
-		// Фиксируем точку положения шарика.
-		AddPointToMainCirclePath();
-		
-		vector<Point> connectingPoints =
-			FieldCuttingHelper::GetMinConnectingPoints(mainCirclePath[0],
-				mainCirclePath[mainCirclePath.size() - 1],
-				Gdiplus::Rect(0, 0, width, height));
-		for (size_t i = 0; i < connectingPoints.size(); i++) {
-			mainCirclePath.push_back(connectingPoints[i]);
-		}
+	int prevX = mainCircle.GetX();
+	int prevY = mainCircle.GetY();
 
-		// Получаем захваченные шариком прямоугольные области.
-		vector<Rect> newCapturedRects = FieldCuttingHelper::SplitIntoRects(mainCirclePath);
-		for (size_t i = 0; i < newCapturedRects.size(); i++) {
-			capturedField.push_back(newCapturedRects[i]);
+	mainCircle.MoveWithinTheBounds(Gdiplus::Rect(0, 0, fieldWidth, fieldHeight));
+	switch (fieldCells[mainCircle.GetY()][mainCircle.GetX()])
+	{
+	case 0:
+	{
+		fieldCells[mainCircle.GetY()][mainCircle.GetX()] = 2;
+		break;
+	}
+	case 1:
+	{
+		if (fieldCells[prevY][prevX] == 2) {
+			mainCircle.SetDirection(Direction::None);
+
+			for (size_t i = 0; i < enemyCircles.size(); i++)
+				CheckCell(enemyCircles[i].x, enemyCircles[i].y);
+
+			UpdateField();
+			finishMovement = true;
+
+			if (100 - enemyPercentage >= enemyPercentageToWin)
+			{
+				isAWin = true;
+			}
 		}
-		// Очищаем точки пути.
-		mainCirclePath.clear();
-		finishMovement = true;
+		break;
+	}
+	case 2:
+	{
+		isGameOver = true;
+		break;
+	}
 	}
 
-	DrawCircle(hdc, mainCircle);
+	Color color = mainCircle.GetColor();
+	SolidBrush brush(color);
+	Graphics graphics(hdc);
+	graphics.FillEllipse(&brush, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
+		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+
+	Color darkerColor(max(color.GetR() - 100, 0),
+		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
+	Pen pen(darkerColor, 1);
+	graphics.DrawEllipse(&pen, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
+		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+
 	for (size_t i = 0; i < enemyCircles.size(); i++) {
-		DrawCircle(hdc, enemyCircles[i]);
-	}
+		Gdiplus::Point previousPosition = enemyCircles[i].GetPosition();
+		enemyCircles[i].MoveWithinTheBounds(Gdiplus::Rect(0, 0, fieldWidth, fieldHeight));
 
-	return finishMovement;
+		//todo: улучшить
+		if ((fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX() ] == 1)
+			|| (fieldCells[enemyCircles[i].GetY() ][enemyCircles[i].GetX()  + 1] == 1))
+		{
+			if (fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX() + 1] != 1) {
+				enemyCircles[i].SetX(previousPosition.X);
+			}
+			if (fieldCells[enemyCircles[i].GetY() + 1][enemyCircles[i].GetX()] != 1) {
+				enemyCircles[i].ReverseXDirection();
+			}
+		} 
+
+		if ((fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == 1)
+			|| (fieldCells[enemyCircles[i].GetY() + 1][enemyCircles[i].GetX()] == 1))
+		{
+			if ((fieldCells[enemyCircles[i].GetY() + 1][enemyCircles[i].GetX()] != 1)) {
+				enemyCircles[i].SetY(previousPosition.Y);
+			}
+			enemyCircles[i].ReverseYDirection();
+		}
+
+		DrawCircle(hdc, enemyCircles[i], previousPosition);
+		
+		if (fieldCells[enemyCircles[i].y ][enemyCircles[i].x ] == 2) {
+			isGameOver = true;
+		}
+	}
+	
+	return finishMovement || isGameOver;
 }
 
 void XonixManager::OnPaint(HDC hdc) {
@@ -157,50 +253,115 @@ void XonixManager::OnPaint(HDC hdc) {
 
 	graphics.DrawImage(petImageOutline, x0, y0, width, height);
 
-	// Атрибуты для указания, как будет отрисовываться изображение.
-	//ImageAttributes imAtt;
-	//imAtt.SetWrapMode(WrapModeTileFlipXY);
-	//graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
-	//graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
+	if(isGameOver) return;
 
-	//Rect zoomRect(x, y, 300, 300);
-	//graphics.DrawImage(petImage, zoomRect, 0, 0, 
-	//	300 * imageWidth/newWidth, 300 * imageHeight/ newHeight, UnitPixel, &imAtt);
+	for (int i = 0; i < fieldHeight; i++)
+	{
+		for (int j = 0; j < fieldWidth; j++) {
+			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1) {
 
-	for (size_t i = 0; i < capturedField.size(); i++) {
-		graphics.DrawImage(petImage, Rect(
-			capturedField[i].X + x0, capturedField[i].Y + y0,
-			capturedField[i].Width, capturedField[i].Height),
-			capturedField[i].X * petImage->GetWidth() / width,
-			capturedField[i].Y * petImage->GetHeight() / height,
-			capturedField[i].Width * petImage->GetWidth() / width,
-			capturedField[i].Height * petImage->GetHeight() / height, UnitPixel);
+			}
+			else if (fieldCells[i][j] == 0)
+			{
+				Color color = Color(255, 50, 80);
+				SolidBrush brush(color);
+				graphics.FillRectangle(&brush, Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
+			}
+		}
 	}
+	Rect borderRect(x0, y0,
+		width, height);
 
-	// Рисуем границу картинки.
-	Rect borderRect(x0 - BORDER_THICKNESS, y0 - BORDER_THICKNESS,
-		width + 2 * BORDER_THICKNESS, height + 2 * BORDER_THICKNESS);
-	LinearGradientBrush brush(borderRect, Color(255, 150, 0), Color(255, 170, 0), LinearGradientModeForwardDiagonal);
+	LinearGradientBrush brush(borderRect, Color(240, 190, 40), Color(250, 230, 80), LinearGradientModeForwardDiagonal);
 	Pen pen(&brush, (REAL)BORDER_THICKNESS);
 	pen.SetAlignment(PenAlignmentInset);
 	graphics.DrawRectangle(&pen, borderRect);
 }
 
-void XonixManager::DrawCircle(HDC hdc, SimpleCircle circle)
+void XonixManager::DrawCircle(HDC hdc, SimpleCircle circle, Gdiplus::Point previousPosition)
 {
 	Graphics graphics(hdc);
 
+	// Стираем предыдущий круг.
+	Color backgroundColor = Color(255, 50, 80);
+	SolidBrush bbrush(backgroundColor);
+	Pen bpen(backgroundColor, 1);
+	graphics.FillEllipse(&bbrush, x0 + previousPosition.X * CELL_SIZE - 1, y0 + previousPosition.Y * CELL_SIZE -1,
+		circle.GetRadius() * 2 + 2, circle.GetRadius() * 2 + 2);
+	
+	// Рисуем новый круг.
 	Color color = circle.GetColor();
 	SolidBrush brush(color);
-	graphics.FillEllipse(&brush, x0 + circle.GetX(), y0 + circle.GetY(),
+	graphics.FillEllipse(&brush, x0 + circle.GetX() * CELL_SIZE, y0 + circle.GetY() * CELL_SIZE,
 		circle.GetRadius() * 2, circle.GetRadius() * 2);
-
+	
+	// Контур делаем темнее.
 	Color darkerColor(max(color.GetR() - 100, 0),
 		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
 	Pen pen(darkerColor, 1);
-	graphics.DrawEllipse(&pen, x0 + circle.GetX(), y0 + circle.GetY(),
+	graphics.DrawEllipse(&pen, x0 + circle.GetX() * CELL_SIZE, y0 + circle.GetY() * CELL_SIZE,
 		circle.GetRadius() * 2, circle.GetRadius() * 2);
 }
+
+void XonixManager::CheckCell(int x, int y)
+{
+	stack<int> CordinateStack;
+
+	CordinateStack.push(x);
+	CordinateStack.push(y);
+	while (CordinateStack.empty() == false) {
+		if (fieldCells[y][x] == 0) 
+			fieldCells[y][x] = -1;
+		if (fieldCells[y - 1][x] == 0)
+		{
+			CordinateStack.push(x);
+			CordinateStack.push(y);
+			y--;
+		}
+		else if (fieldCells[y + 1][x] == 0) // 0
+		{
+			CordinateStack.push(x);
+			CordinateStack.push(y);
+			y++;
+		}
+		else if (fieldCells[y][x - 1] == 0) //0
+		{
+			CordinateStack.push(x);
+			CordinateStack.push(y);
+			x--;
+		}
+		else if (fieldCells[y][x + 1] == 0)
+		{
+			CordinateStack.push(x);
+			CordinateStack.push(y);
+			x++;
+		}
+		else
+		{
+			y = CordinateStack.top();
+			CordinateStack.pop();
+			x = CordinateStack.top();
+			CordinateStack.pop();
+		}
+	}
+
+}
+
+void XonixManager::UpdateField()
+{
+	int ColEnemyCell = 0;
+	for (int i = 0; i < fieldHeight; i++)
+		for (int j = 0; j < fieldWidth; j++)
+			if (fieldCells[i][j] == -1)
+			{
+				fieldCells[i][j] = 0;
+				ColEnemyCell++;
+			}
+			else fieldCells[i][j] = 1;
+
+	enemyPercentage = ((float)ColEnemyCell / ((fieldWidth - 1) * (fieldHeight - 1))) * 100;
+}
+
 
 void XonixManager::ZoomImageToFitRect(
 	int* imageWidth, int *imageHeight, int rectWidth, int rectHeight)

@@ -33,11 +33,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 		return false;
 	}
 
-	xonixManager = new XonixManager();
-
 	int width = 450;
 	int height = 580;
-
+	
 	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPED |
 		WS_CAPTION | WS_SYSMENU,
 		GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2,
@@ -65,7 +63,8 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_CREATE: {
 		RECT rect;
 		GetClientRect(hWnd, &rect);
-		xonixManager->StartNewGame(rect.right - rect.left, rect.bottom - rect.top);
+		xonixManager = new XonixManager(rect.right - rect.left, rect.bottom - rect.top);
+		xonixManager->StartNewGame();
 		drawCirclesThread = CreateThread(NULL, 0, DrawCirclesProc, (LPVOID)hWnd, 0, NULL);
 		gameStarted = true;
 		break;
@@ -152,15 +151,30 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-DWORD WINAPI DrawCirclesProc(LPVOID hWnd) {
-	HDC hdc = GetDC((HWND)hWnd);
+DWORD WINAPI DrawCirclesProc(LPVOID hwnd) {
+	HWND hWnd = (HWND)hwnd;
+	HDC hdc = GetDC(hWnd);
 	while (true) {
 		while (gameStarted) {
 			if (xonixManager->MoveCircle(hdc)) {
-				InvalidateRect((HWND)hWnd, NULL, TRUE);
-				UpdateWindow((HWND)hWnd);
+				InvalidateRect(hWnd, NULL, TRUE);
+				UpdateWindow(hWnd);
+				if (xonixManager->IsGameOver()) {
+					MessageBox(hWnd, "Вы проиграли :с", "Игра закончена", MB_OK | MB_APPLMODAL);
+					xonixManager->StartNewGame();
+					InvalidateRect(hWnd, NULL, TRUE);
+					UpdateWindow(hWnd);
+				}
+
+				if (xonixManager->IsAWin())
+				{
+					MessageBox(hWnd, "Победа!!!", "Игра закончена", MB_OK | MB_APPLMODAL);
+					xonixManager->StartNewGame();
+					InvalidateRect(hWnd, NULL, TRUE);
+					UpdateWindow(hWnd);
+				}
 			}
-			Sleep(3);
+			Sleep(100);
 		}
 		Sleep(100);
 	}

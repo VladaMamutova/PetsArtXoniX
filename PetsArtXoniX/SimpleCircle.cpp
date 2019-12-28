@@ -53,7 +53,7 @@ int SimpleCircle::GetRadius() {
 	return radius;
 }
 
-Color SimpleCircle::GetColor() {
+Gdiplus::Color SimpleCircle::GetColor() {
 	return color;
 }
 
@@ -69,7 +69,17 @@ void SimpleCircle::SetRadius(int radius) {
 	this->radius = radius;
 }
 
-void SimpleCircle::SetColor(Color color) {
+void SimpleCircle::SetColor(Gdiplus::Color color) {
 	this->color = color;
 }
 
+Gdiplus::Point SimpleCircle::GetPosition()
+{
+	return Gdiplus::Point(x, y);
+}
+
+void SimpleCircle::SetPosition(Gdiplus::Point position)
+{
+	x = position.X;
+	y = position.Y;
+}

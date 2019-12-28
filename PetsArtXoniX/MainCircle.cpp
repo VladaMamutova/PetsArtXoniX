@@ -79,8 +79,8 @@ void MainCircle::MoveWithinTheBounds(Rect bounds) {
 	// Проверяем, не будет ли выходить шарик выходить за границы области.
 	// Если достиг границы, шарик останавливается.
 
-	if (x + xDelta + 2 * radius < bounds.GetLeft()) {
-		x = bounds.GetLeft() - 2 * radius;
+	if (x + xDelta < bounds.GetLeft()) {
+		x = bounds.GetLeft();
 		direction = Direction::None;
 	}
 	else if (x + xDelta > bounds.Width) {
@@ -91,12 +91,12 @@ void MainCircle::MoveWithinTheBounds(Rect bounds) {
 		x += xDelta;
 	}
 
-	if (y + yDelta + 2 * radius < bounds.GetTop()) {
-		y = bounds.GetTop() - 2 * radius;
+	if (y + yDelta  < bounds.GetTop()) {
+		y = bounds.GetTop();
 		direction = Direction::None;
 	}
-	else if (y + yDelta > bounds.Height) {
-		y = bounds.Height;
+	else if (y + yDelta >= bounds.Height) {
+		y = bounds.Height - 1;
 		direction = Direction::None;
 	}
 	else {

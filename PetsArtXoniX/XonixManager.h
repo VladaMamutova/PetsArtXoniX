@@ -13,11 +13,22 @@ using namespace Gdiplus;
 #define LEVEL_COUNT 1
 #define FIELD_MARGIN 30
 #define CIRCLE_RADIUS 4
-#define BORDER_THICKNESS CIRCLE_RADIUS * 2
+#define CELL_SIZE 10
+#define BORDER_THICKNESS CELL_SIZE
 
 class XonixManager
 {
 private:
+	enum FieldCellState {
+		EMPTY,
+		MARKED,
+		FILLED
+	};
+
+	int fieldWidth;
+	int fieldHeight;
+	int** fieldCells;
+
 	Image *petImage; // Текущая цветная заполненная картинка.
 	Image *petImageOutline; // Текущая картинка-контур.
 	
@@ -34,7 +45,12 @@ private:
 	// значение - структура, содержащая пару картинок: заполненную и контур.
 	map <int, PairImages> imagePathes;
 	int level;
+	int enemyPercentageToWin = 80;
 	int enemyCount;
+	float enemyPercentage;
+
+	bool isGameOver;
+	bool isAWin;
 
 	MainCircle mainCircle;
 	vector<EnemyCircle> enemyCircles;
@@ -46,16 +62,20 @@ private:
 	void InitMainCircle(int x, int y);
 	void InitEnemyCircles(Rect bounds);
 public:
-	XonixManager();
+	XonixManager(int, int);
 	~XonixManager();
-	void StartNewGame(int, int);
+	bool IsGameOver();
+	bool IsAWin();
+	void StartNewGame();
 	void SetTopMove();
 	void SetBottomMove();
 	void SetLeftMove();
 	void SetRightMove();
 	bool MoveCircle(HDC);
 	void OnPaint(HDC);
-	void DrawCircle(HDC, SimpleCircle);
+	void DrawCircle(HDC, SimpleCircle, Point);
 	void AddPointToMainCirclePath();
+	void CheckCell(int x, int y);
+	void UpdateField();
 	void ZoomImageToFitRect(int*, int*, int, int);
 };

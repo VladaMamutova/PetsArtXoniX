@@ -2,18 +2,16 @@
 #include <windows.h> // обязательно до gdiplus.h
 #include <gdiplus.h>
 
-using namespace Gdiplus;
-
 class SimpleCircle
 {
 private:
 	const int DEFAULT_RADIUS = 10;
-	const Color DEFAULT_COLOR = Color(0, 0, 0);
-protected:
+	const Gdiplus::Color DEFAULT_COLOR = Gdiplus::Color(0, 0, 0);
+public:
 	int x;
 	int y;
 	int radius;
-	Color color;
+	Gdiplus::Color color;
 public:
 	SimpleCircle();
 	SimpleCircle(int x, int y);
@@ -24,9 +22,11 @@ public:
 	int GetX();
 	int GetY();
 	int GetRadius();
-	Color GetColor();
+	Gdiplus::Color GetColor();
+	Gdiplus::Point GetPosition();
 	void SetX(int x);
 	void SetY(int y);
 	void SetRadius(int radius);
-	void SetColor(Color color);
+	void SetColor(Gdiplus::Color color);
+	void SetPosition(Gdiplus::Point position);
 };
