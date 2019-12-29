@@ -3,7 +3,7 @@
 #include <commctrl.h>
 #include <string>
 #include <mmsystem.h>
-#include <stdio.h>
+#include "resource.h"
 #include "XonixManager.h"
 
 using namespace Gdiplus; // Для отрисовки фоновой картинки.
@@ -14,14 +14,12 @@ using namespace std;
 #define ID_STATUS_BAR 1001
 #define ID_START_NEW_GAME 1002
 #define ID_EXIT 1003
-#define ID_BUTTON 1004
-#define ID_SOUNDS_ON 1005
-#define ID_SOUNDS_OFF 1006
-#define ID_TOOLBAR 1007
-#define ID_MOVE_LEFT 1008
-#define ID_MOVE_TOP 1009
-#define ID_MOVE_RIGHT 1010
-#define ID_MOVE_BOTTOM 1011
+#define ID_SETTINGS 1004
+#define ID_TOOLBAR 1005
+#define ID_MOVE_LEFT 1006
+#define ID_MOVE_TOP 1007
+#define ID_MOVE_RIGHT 1008
+#define ID_MOVE_BOTTOM 1009
 
 XonixManager* xonixManager;
 HANDLE drawCirclesThread;
@@ -31,6 +29,7 @@ bool soundsOn;
 LONG WinProc(HWND, UINT, WPARAM, LPARAM);
 BOOL RegWinClass(WNDPROC, LPCTSTR, HBRUSH);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK DialogProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI DrawCirclesProc(LPVOID);
 
 HINSTANCE hInst;
@@ -41,7 +40,7 @@ static HWND statusBar;
 static HWND mainMenu;
 static HWND button;
 static HWND toolBar;
-static TBBUTTON toolBarButtons[5];
+static TBBUTTON toolBarButtons[8];
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 {
@@ -88,7 +87,8 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_CREATE: {
 		HMENU popupMenu, mainMenu;
 		AppendMenu((popupMenu = CreatePopupMenu()), MF_ENABLED | MFT_STRING,
-			(UINT_PTR)ID_START_NEW_GAME, "Начать новую игру");	
+			(UINT_PTR)ID_START_NEW_GAME, "Начать сначала");
+		AppendMenu(popupMenu, MFT_STRING, (UINT_PTR)ID_SETTINGS, "Настройки");
 		AppendMenu(popupMenu, MF_SEPARATOR, NULL, NULL);
 		AppendMenu(popupMenu, MFT_STRING, (UINT_PTR)ID_EXIT, "Выйти");
 		AppendMenu((mainMenu = CreateMenu()), MF_ENABLED | MF_POPUP, (UINT_PTR)popupMenu, "Игра");
@@ -97,22 +97,19 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 		statusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "", hWnd, ID_STATUS_BAR);
 
-		RECT rect;
-		GetClientRect(hWnd, &rect);
-
-		CreateWindow("static", "Звуки:",
-			WS_CHILD | WS_VISIBLE | SS_CENTER,
-			10, rect.bottom - 50, 50, 20, hWnd, NULL, NULL, NULL);
-		HWND soundsOnButton = CreateWindow("button", "Вкл.",
-			WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-			70, rect.bottom - 50, 60, 20, hWnd, (HMENU)ID_SOUNDS_ON, hInst, NULL);
-		CreateWindow("button", "Выкл.",
-			WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-			130, rect.bottom - 50, 60, 20, hWnd, (HMENU)ID_SOUNDS_OFF, hInst, NULL);
-		SendMessage(soundsOnButton, BM_SETCHECK, 1, 0);
+		//CreateWindow("static", "Звуки:",
+		//	WS_CHILD | WS_VISIBLE | SS_CENTER,
+		//	10, rect.bottom - 50, 50, 20, hWnd, NULL, NULL, NULL);
+		//HWND soundsOnButton = CreateWindow("button", "Вкл.",
+		//	WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+		//	70, rect.bottom - 50, 60, 20, hWnd, (HMENU)ID_SOUNDS_ON, hInst, NULL);
+		//CreateWindow("button", "Выкл.",
+		//	WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+		//	130, rect.bottom - 50, 60, 20, hWnd, (HMENU)ID_SOUNDS_OFF, hInst, NULL);
+		//SendMessage(soundsOnButton, BM_SETCHECK, 1, 0);
 		soundsOn = true;
 
-		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE, ID_TOOLBAR,
+		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT , ID_TOOLBAR,
 			0, HINST_COMMCTRL, IDB_STD_LARGE_COLOR, 0, 0, 0, 0, 0, 0, sizeof(TBBUTTON));
 
 		HIMAGELIST imageList;
@@ -151,17 +148,26 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			toolBarButtons[1].iBitmap = MAKELONG(indexLeft, imageListId);
 			toolBarButtons[1].idCommand = ID_MOVE_LEFT;
 			toolBarButtons[1].fsState = TBSTATE_ENABLED;
-			toolBarButtons[2].iBitmap = MAKELONG(indexTop, imageListId);
-			toolBarButtons[2].idCommand = ID_MOVE_TOP;
-			toolBarButtons[2].fsState = TBSTATE_ENABLED;
-			toolBarButtons[3].iBitmap = MAKELONG(indexRight, imageListId);
-			toolBarButtons[3].idCommand = ID_MOVE_RIGHT;
-			toolBarButtons[3].fsState = TBSTATE_ENABLED;
-			toolBarButtons[4].iBitmap = MAKELONG(indexBottom, imageListId);
-			toolBarButtons[4].idCommand = ID_MOVE_BOTTOM;
-			toolBarButtons[4].fsState = TBSTATE_ENABLED;
 
-			SendMessage(toolBar, TB_ADDBUTTONS, 5, (LPARAM)(&toolBarButtons));
+			toolBarButtons[2].fsStyle = TBSTYLE_SEP;
+
+			toolBarButtons[3].iBitmap = MAKELONG(indexTop, imageListId);
+			toolBarButtons[3].idCommand = ID_MOVE_TOP;
+			toolBarButtons[3].fsState = TBSTATE_ENABLED;
+
+			toolBarButtons[4].fsStyle = TBSTYLE_SEP;
+
+			toolBarButtons[5].iBitmap = MAKELONG(indexRight, imageListId);
+			toolBarButtons[5].idCommand = ID_MOVE_RIGHT;
+			toolBarButtons[5].fsState = TBSTATE_ENABLED;
+
+			toolBarButtons[6].fsStyle = TBSTYLE_SEP;
+
+			toolBarButtons[7].iBitmap = MAKELONG(indexBottom, imageListId);
+			toolBarButtons[7].idCommand = ID_MOVE_BOTTOM;
+			toolBarButtons[7].fsState = TBSTATE_ENABLED;
+
+			SendMessage(toolBar, TB_ADDBUTTONS, 8, (LPARAM)(&toolBarButtons));
 		}
 
 		/*button = CreateWindow("button", "Начать заново", WS_TABSTOP | WS_CHILD | WS_OVERLAPPED|
@@ -176,8 +182,11 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		//	WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 0, 0, 300, 20, hWnd,
 		//	(HMENU)ID_BUTTON, NULL, NULL);
 
-		xonixManager = new XonixManager(Rect(0, 30, rect.right - rect.left,
-			rect.bottom - rect.top - bottomMenuHeight - 30));
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+
+		xonixManager = new XonixManager(Rect(0, 40, rect.right - rect.left,
+			rect.bottom - rect.top - 70));
 		xonixManager->StartNewGame();
 		drawCirclesThread = CreateThread(NULL, 0, DrawCirclesProc, (LPVOID)hWnd, 0, NULL);
 		gameStarted = true;
@@ -224,14 +233,6 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
 			break;
 		}
-		case ID_SOUNDS_ON: {
-			soundsOn = true;
-			break;
-		}
-		case ID_SOUNDS_OFF: {
-			soundsOn = false;
-			break;
-		}
 		case ID_MOVE_LEFT: {
 			xonixManager->SetLeftMove();
 			break;
@@ -248,7 +249,14 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			xonixManager->SetBottomMove();
 			break;
 		}
-		case ID_BUTTON: {
+		case ID_SETTINGS: {
+			if (DialogBox(NULL, (LPCTSTR)IDD_DIALOGBAR, hWnd,
+				(DLGPROC)DialogProc) == IDOK) {
+				//graph.SetIntervalX(xMin, xMax);
+				InvalidateRect(hWnd, NULL, TRUE);
+			}
+		}
+		/*case ID_BUTTON: {
 			xonixManager->StartNewGame();
 			InvalidateRect(hWnd, NULL, TRUE);
 			UpdateWindow(hWnd);
@@ -256,7 +264,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
 			SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
 			break;
-		}
+		}*/
 		}
 		break;
 	}
@@ -275,7 +283,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 		// Заливаем фон с помощью градиентной кисти.
 		Graphics graphics(buffHdc);
-		Rect bounds(0, 0, rect.right, rect.bottom - bottomMenuHeight);
+		Rect bounds(0, 0, rect.right, rect.bottom);
 		LinearGradientBrush brush(bounds, Color(100, 200, 0), Color(200, 200, 0),
 			LinearGradientModeForwardDiagonal);
 		graphics.FillRectangle(&brush, bounds);
@@ -283,7 +291,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		// Перерисовываем все объекты в игре.
 		xonixManager->OnPaint(buffHdc);
 
-		BitBlt(hdc, 0, 0, rect.right, rect.bottom - bottomMenuHeight, buffHdc, 0, 0, SRCCOPY);
+		BitBlt(hdc, 0, 0, rect.right, rect.bottom, buffHdc, 0, 0, SRCCOPY);
 
 		// Освобождаем память.
 		SelectObject(buffHdc, buffHan);
@@ -362,6 +370,75 @@ DWORD WINAPI DrawCirclesProc(LPVOID hwnd) {
 	}
 	ReleaseDC((HWND)hWnd, hdc);
 	return 0;
+}
+
+BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
+	LPARAM lParam)
+{
+	char minim[100], maxim[100];
+	switch (msg)
+	{
+	case WM_INITDIALOG:
+	{
+		/*sprintf_s(minim, "%.2f", xMin);
+		sprintf_s(maxim, "%.2f", xMax);
+
+		SetDlgItemText(hDlg, IDC_EDBOX_X_MIN, minim);
+		SetDlgItemText(hDlg, IDC_EDBOX_X_MAX, maxim);*/
+
+		return FALSE;
+	}
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wParam))
+		{
+		case IDC_RADIO_ON: {
+			soundsOn = true;
+			return FALSE;
+		}
+		case IDC_RADIO_OFF: {
+			soundsOn = false;
+			return FALSE;
+		}
+		case IDOK: {
+			/*GetDlgItemText(hDlg, IDC_EDBOX_X_MIN, minim, sizeof(minim));
+			GetDlgItemText(hDlg, IDC_EDBOX_X_MAX, maxim, sizeof(maxim));
+
+			double newXMin = atof(minim);
+			double newXMax = atof(maxim);
+
+			if (newXMin >= newXMax) {
+				MessageBox(NULL, "Xmax должен быть больше Xmin.",
+					"Параметры функции", MB_OK);
+			}
+			else if (newXMin < -500) {
+				MessageBox(NULL, "Xmin не может быть больше -500 Пи.",
+					"Параметры функции", MB_OK);
+			}
+			else if (newXMax > 500) {
+				MessageBox(NULL, "Xmax должен быть меньше 500 Пи.",
+					"Параметры функции", MB_OK);
+			}
+			else {
+				xMin = newXMin;
+				xMax = newXMax;
+				EndDialog(hDlg, IDOK);
+			}*/
+			return TRUE;
+		}
+		case IDCANCEL:
+			EndDialog(hDlg, IDCANCEL);
+			return TRUE;
+		default: return FALSE;
+		}
+	}
+	case WM_CLOSE:
+	{
+		EndDialog(hDlg, 0);
+		return FALSE;
+	}
+	}
+	return FALSE; // false - для вызова функции прорисовки окна.
 }
 
 BOOL RegWinClass(WNDPROC proc, LPCTSTR lpszClassName, HBRUSH backgroundBrush) {

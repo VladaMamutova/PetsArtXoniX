@@ -76,6 +76,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -125,8 +129,12 @@
     <ClInclude Include="IMovable.h" />
     <ClInclude Include="MainCircle.h" />
     <ClInclude Include="PairImages.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SimpleCircle.h" />
     <ClInclude Include="XonixManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SettingsDialog.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
