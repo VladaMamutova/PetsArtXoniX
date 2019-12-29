@@ -66,11 +66,13 @@ public:
 	~XonixManager();
 	bool IsGameOver();
 	bool IsAWin();
+	bool GetEnemyCount();
 	void StartNewGame();
 	void SetTopMove();
 	void SetBottomMove();
 	void SetLeftMove();
 	void SetRightMove();
+	void SetEnemyCount(int);
 	float GetCapturedFieldPersentage();
 	bool MoveCircle(HDC);
 	void OnPaint(HDC);

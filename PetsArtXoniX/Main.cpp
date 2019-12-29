@@ -34,7 +34,6 @@ DWORD WINAPI DrawCirclesProc(LPVOID);
 
 HINSTANCE hInst;
 TCHAR progName[] = "MainWindow";
-int bottomMenuHeight = 60;
 
 static HWND statusBar;
 static HWND mainMenu;
@@ -47,7 +46,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 	MSG msg;
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
-	
+
 	// Инициализируем GDI+.
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
@@ -59,7 +58,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 
 	int width = 450;
 	int height = 600;
-	
+
 	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPED |
 		WS_CAPTION | WS_SYSMENU,
 		GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2,
@@ -87,7 +86,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_CREATE: {
 		HMENU popupMenu, mainMenu;
 		AppendMenu((popupMenu = CreatePopupMenu()), MF_ENABLED | MFT_STRING,
-			(UINT_PTR)ID_START_NEW_GAME, "Начать сначала");
+			(UINT_PTR)ID_START_NEW_GAME, "Начать новую игру");
 		AppendMenu(popupMenu, MFT_STRING, (UINT_PTR)ID_SETTINGS, "Настройки");
 		AppendMenu(popupMenu, MF_SEPARATOR, NULL, NULL);
 		AppendMenu(popupMenu, MFT_STRING, (UINT_PTR)ID_EXIT, "Выйти");
@@ -109,7 +108,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		//SendMessage(soundsOnButton, BM_SETCHECK, 1, 0);
 		soundsOn = true;
 
-		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT , ID_TOOLBAR,
+		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT, ID_TOOLBAR,
 			0, HINST_COMMCTRL, IDB_STD_LARGE_COLOR, 0, 0, 0, 0, 0, 0, sizeof(TBBUTTON));
 
 		HIMAGELIST imageList;
@@ -142,7 +141,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 			int imageListId = 0;
 			SendMessage(toolBar, TB_SETIMAGELIST, imageListId, (LPARAM)imageList);
-			
+
 			toolBarButtons[0].fsStyle = TBSTYLE_SEP;
 
 			toolBarButtons[1].iBitmap = MAKELONG(indexLeft, imageListId);
@@ -173,11 +172,11 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		/*button = CreateWindow("button", "Начать заново", WS_TABSTOP | WS_CHILD | WS_OVERLAPPED|
 			WS_VISIBLE | WS_BORDER, rect.right - 170, 4, 160, 22, hWnd, (HMENU)ID_BUTTON, NULL, NULL);
 */
-		//edit_window = CreateWindowEx(WS_EX_STATICEDGE, L"edit", NULL,
-		//	WS_CHILD | WS_VISIBLE | ES_MULTILINE, 230, 400, 30, 20, hWnd, (HMENU)EDIT_BOX, NULL, NULL);
+//edit_window = CreateWindowEx(WS_EX_STATICEDGE, L"edit", NULL,
+//	WS_CHILD | WS_VISIBLE | ES_MULTILINE, 230, 400, 30, 20, hWnd, (HMENU)EDIT_BOX, NULL, NULL);
 
-	/*	statusBar = CreateWindowEx("statusbar", "", NULL, WS_CHILD | WS_VISIBLE,
-			0, rect.bottom - 40, rect.right - rect.left, 40, hWnd, NULL, hInst, NULL);*/
+/*	statusBar = CreateWindowEx("statusbar", "", NULL, WS_CHILD | WS_VISIBLE,
+		0, rect.bottom - 40, rect.right - rect.left, 40, hWnd, NULL, hInst, NULL);*/
 		//button = CreateWindow("button", "Одиночный выстрел",
 		//	WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 0, 0, 300, 20, hWnd,
 		//	(HMENU)ID_BUTTON, NULL, NULL);
@@ -256,15 +255,15 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 				InvalidateRect(hWnd, NULL, TRUE);
 			}
 		}
-		/*case ID_BUTTON: {
-			xonixManager->StartNewGame();
-			InvalidateRect(hWnd, NULL, TRUE);
-			UpdateWindow(hWnd);
-			TCHAR result[50];
-			wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
-			SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
-			break;
-		}*/
+						  /*case ID_BUTTON: {
+							  xonixManager->StartNewGame();
+							  InvalidateRect(hWnd, NULL, TRUE);
+							  UpdateWindow(hWnd);
+							  TCHAR result[50];
+							  wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
+							  SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
+							  break;
+						  }*/
 		}
 		break;
 	}
@@ -375,19 +374,91 @@ DWORD WINAPI DrawCirclesProc(LPVOID hwnd) {
 BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 	LPARAM lParam)
 {
-	char minim[100], maxim[100];
+	static HWND radioButton;
+	static HWND scrollBar;
+	// Обязательно static, чтобы при обрабоке новых
+	// сообщений окна значения сохранялись.
+	static int enemyCount = xonixManager->GetEnemyCount();
+	static TCHAR enemyCountString[10];
 	switch (msg)
 	{
 	case WM_INITDIALOG:
 	{
-		/*sprintf_s(minim, "%.2f", xMin);
-		sprintf_s(maxim, "%.2f", xMax);
+		// Устанавливаем переключатель звука.
+		radioButton = soundsOn ? GetDlgItem(hDlg, IDC_RADIO_ON) : GetDlgItem(hDlg, IDC_RADIO_OFF);
+		radioButton = soundsOn ? GetDlgItem(hDlg, IDC_RADIO_ON) : GetDlgItem(hDlg, IDC_RADIO_OFF);
+		SendMessage(radioButton, BM_SETCHECK, 1, 0);
+		if (IsDlgButtonChecked(hDlg, IDC_RADIO_ON)) {
+			SendMessage(radioButton, BM_SETCHECK, 1, 0);
+		}
 
-		SetDlgItemText(hDlg, IDC_EDBOX_X_MIN, minim);
-		SetDlgItemText(hDlg, IDC_EDBOX_X_MAX, maxim);*/
+		// Выводим количество врагов.
+		sprintf_s(enemyCountString, "%d %s", xonixManager->GetEnemyCount(), "враг");
+		if (enemyCount % 10 > 1 && enemyCount % 10 < 5) {
+			lstrcat(enemyCountString, "а");
+		}
+		else if (enemyCount % 10 == 0 || enemyCount % 10 >= 5) {
+			lstrcat(enemyCountString, "ов");
+		}
+
+		SetDlgItemText(hDlg, IDC_STATIC_RESULT_ENEMY_COUNT, enemyCountString);
+
+		// Устанавливаем состояние скроллбара.
+		scrollBar = GetDlgItem(hDlg, IDC_SCROLLBAR_ENEMY_COUNT);
+		SetScrollRange(scrollBar, SB_CTL, 1, 6, TRUE);
+		SetScrollPos(scrollBar, SB_CTL, enemyCount, TRUE);
 
 		return FALSE;
 	}
+	case WM_HSCROLL: {
+		switch (LOWORD(wParam)) {
+		case SB_LEFT: {
+			enemyCount = 1;
+			break;
+		}
+		case SB_LINELEFT:
+		case SB_PAGELEFT:
+		{
+			enemyCount--;
+			break;
+		}
+		case SB_RIGHT:
+		{
+			enemyCount = 6;
+			break;
+		}
+		case SB_LINERIGHT:
+		case SB_PAGERIGHT: {
+			enemyCount++;
+			break;
+		}
+		case SB_THUMBPOSITION:
+		case SB_THUMBTRACK: {
+			enemyCount = HIWORD(wParam);
+			break;
+		}
+		}
+		if (enemyCount >= 6) {
+			enemyCount = 6;
+			EnableScrollBar(statusBar, SB_CTL, ESB_DISABLE_RIGHT);
+		}
+		if (enemyCount <= 1) {
+			enemyCount = 1;
+			EnableScrollBar(statusBar, SB_CTL, ESB_DISABLE_LEFT);
+		}
+		sprintf_s(enemyCountString, "%d %s", enemyCount, "враг");
+		if (enemyCount % 10 > 1 && enemyCount % 10 < 5) {
+			lstrcat(enemyCountString, "а");
+		}
+		else if (enemyCount % 10 == 0 || enemyCount % 10 >= 5) {
+			lstrcat(enemyCountString, "ов");
+		}
+
+		SetScrollPos(scrollBar, SB_CTL, enemyCount, TRUE);
+		SetDlgItemText(hDlg, IDC_STATIC_RESULT_ENEMY_COUNT, enemyCountString);
+		return FALSE;
+	}
+
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
@@ -401,6 +472,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			return FALSE;
 		}
 		case IDOK: {
+			xonixManager->SetEnemyCount(enemyCount);
 			/*GetDlgItemText(hDlg, IDC_EDBOX_X_MIN, minim, sizeof(minim));
 			GetDlgItemText(hDlg, IDC_EDBOX_X_MAX, maxim, sizeof(maxim));
 
@@ -422,8 +494,9 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			else {
 				xMin = newXMin;
 				xMax = newXMax;
-				EndDialog(hDlg, IDOK);
 			}*/
+
+			EndDialog(hDlg, IDOK);
 			return TRUE;
 		}
 		case IDCANCEL:

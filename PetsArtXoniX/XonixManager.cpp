@@ -84,6 +84,11 @@ bool XonixManager::IsAWin()
 	return isAWin;
 }
 
+bool XonixManager::GetEnemyCount()
+{
+	return enemyCount;
+}
+
 void XonixManager::StartNewGame() {
 	isAWin = false;
 	isGameOver = false;
@@ -156,6 +161,11 @@ void XonixManager::SetRightMove() {
 	AddPointToMainCirclePath();
 }
 
+void XonixManager::SetEnemyCount(int enemyCount)
+{
+	this->enemyCount = enemyCount;
+}
+
 float XonixManager::GetCapturedFieldPersentage()
 {
 	return capturedFieldPercentage;
@@ -197,7 +207,6 @@ bool XonixManager::MoveCircle(HDC hdc) {
 			{
 				isAWin = true;
 				level++;
-				enemyCount++;
 			}
 		}
 		break;
