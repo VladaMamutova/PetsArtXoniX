@@ -21,6 +21,8 @@ using namespace std;
 #define ID_MOVE_RIGHT 1008
 #define ID_MOVE_BOTTOM 1009
 
+#define RESULT_LINE_LENGTH 100
+
 XonixManager* xonixManager;
 HANDLE drawCirclesThread;
 bool gameStarted = false;
@@ -376,6 +378,8 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 {
 	static HWND radioButton;
 	static HWND scrollBar;
+	static HWND list;
+
 	// Обязательно static, чтобы при обрабоке новых
 	// сообщений окна значения сохранялись.
 	static int enemyCount = xonixManager->GetEnemyCount();
@@ -408,6 +412,39 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		SetScrollRange(scrollBar, SB_CTL, 1, 6, TRUE);
 		SetScrollPos(scrollBar, SB_CTL, enemyCount, TRUE);
 
+		// Загружаем список результатов.
+		list = GetDlgItem(hDlg, IDC_LISTBOX_RESULTS);
+		HANDLE file;
+		file = CreateFileA(  // функция создания ANSI
+			"result.txt", GENERIC_READ,	0, NULL,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL);
+
+		// Загрузка списка результатов.
+		TCHAR buffer[1];
+		DWORD byteRead;
+		TCHAR line[RESULT_LINE_LENGTH];
+		if (file != INVALID_HANDLE_VALUE)
+		{
+			do
+			{
+				int i = 0;
+				do {
+					ReadFile(file, &buffer, 1, &byteRead, 0);
+					if (byteRead != 0 && buffer[0] != '\r' && buffer[0] != '\n') {
+						line[i] = buffer[0];
+						i++;
+					}
+				} while (byteRead != 0 && buffer[0] != '\r' && buffer[0] != '\n');
+				if(byteRead)
+				line[i] = '\0';
+				if (i > 0) {
+					SendMessage(list, LB_ADDSTRING, 0, (LPARAM)line);
+				}
+
+			} while (byteRead != 0);
+		}
+		CloseHandle(file);
 		return FALSE;
 	}
 	case WM_HSCROLL: {
@@ -456,9 +493,9 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 
 		SetScrollPos(scrollBar, SB_CTL, enemyCount, TRUE);
 		SetDlgItemText(hDlg, IDC_STATIC_RESULT_ENEMY_COUNT, enemyCountString);
+
 		return FALSE;
 	}
-
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
@@ -471,31 +508,32 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			soundsOn = false;
 			return FALSE;
 		}
+		case IDC_BUTTON_SAVE_RESULT: {
+			static TCHAR playerName[50];
+			GetDlgItemText(hDlg, IDC_EDBOX_NAME, playerName, sizeof(playerName));
+
+			if (strlen(playerName) <= 0) {
+				MessageBox(NULL, "Введите ваше имя, чтобы сохранить результаты "
+					"последней игры.", "Сохранение результата игры", MB_OK);
+				return FALSE;
+			}
+
+			TCHAR result[RESULT_LINE_LENGTH];
+			sprintf_s(result, "%s: %d раундов, %d жизней, %d врагов, %s скорость\n",
+				playerName, 0, 0, xonixManager->GetEnemyCount(), "медленная");
+
+			HANDLE file = CreateFile("result.txt", GENERIC_WRITE, 0, NULL,
+				CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			SetFilePointer(file, 0, NULL, FILE_END); // Добавляем данные в конец.
+			WriteFile(file, result, strlen(result), NULL, NULL);
+			CloseHandle(file);
+			SendMessage(list, LB_ADDSTRING, 0, (LPARAM)result);
+
+			return FALSE;
+		}
 		case IDOK: {
 			xonixManager->SetEnemyCount(enemyCount);
-			/*GetDlgItemText(hDlg, IDC_EDBOX_X_MIN, minim, sizeof(minim));
-			GetDlgItemText(hDlg, IDC_EDBOX_X_MAX, maxim, sizeof(maxim));
-
-			double newXMin = atof(minim);
-			double newXMax = atof(maxim);
-
-			if (newXMin >= newXMax) {
-				MessageBox(NULL, "Xmax должен быть больше Xmin.",
-					"Параметры функции", MB_OK);
-			}
-			else if (newXMin < -500) {
-				MessageBox(NULL, "Xmin не может быть больше -500 Пи.",
-					"Параметры функции", MB_OK);
-			}
-			else if (newXMax > 500) {
-				MessageBox(NULL, "Xmax должен быть меньше 500 Пи.",
-					"Параметры функции", MB_OK);
-			}
-			else {
-				xMin = newXMin;
-				xMax = newXMax;
-			}*/
-
+			
 			EndDialog(hDlg, IDOK);
 			return TRUE;
 		}
