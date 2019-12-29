@@ -3,6 +3,7 @@
 #include <gdiplus.h>
 #include <map>
 #include <vector>
+#include <string>
 #include "PairImages.h"
 #include "MainCircle.h"
 #include "EnemyCircle.h"
@@ -11,7 +12,6 @@ using namespace std;
 using namespace Gdiplus;
 
 #define LEVEL_COUNT 1
-#define FIELD_MARGIN 30
 #define CIRCLE_RADIUS 4
 #define CELL_SIZE 10
 #define BORDER_THICKNESS CELL_SIZE
@@ -45,9 +45,9 @@ private:
 	// значение - структура, содержащая пару картинок: заполненную и контур.
 	map <int, PairImages> imagePathes;
 	int level;
-	int enemyPercentageToWin = 80;
+	int capturedFieldPercentageToWin = 80;
 	int enemyCount;
-	float enemyPercentage;
+	float capturedFieldPercentage;
 
 	bool isGameOver;
 	bool isAWin;
@@ -62,7 +62,7 @@ private:
 	void InitMainCircle(int x, int y);
 	void InitEnemyCircles(Rect bounds);
 public:
-	XonixManager(int, int);
+	XonixManager(Gdiplus::Rect);
 	~XonixManager();
 	bool IsGameOver();
 	bool IsAWin();
@@ -71,6 +71,7 @@ public:
 	void SetBottomMove();
 	void SetLeftMove();
 	void SetRightMove();
+	float GetCapturedFieldPersentage();
 	bool MoveCircle(HDC);
 	void OnPaint(HDC);
 	void DrawCircle(HDC, SimpleCircle, Point);

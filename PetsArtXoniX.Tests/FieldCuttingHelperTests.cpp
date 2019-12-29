@@ -14,7 +14,7 @@ namespace PetsArtXoniXTests
 		bool CompareVectors(vector<Point> p1, vector<Point> p2) {
 			if (p1.size() != p2.size())
 				return false;
-			for (int i = 0; i < p1.size(); i++) {
+			for (size_t i = 0; i < p1.size(); i++) {
 				if (p1[i].X != p2[i].X || p1[i].Y != p2[i].Y)
 					return false;
 			}
