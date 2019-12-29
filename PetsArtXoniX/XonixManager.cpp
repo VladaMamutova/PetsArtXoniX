@@ -1,5 +1,4 @@
 ﻿#include "XonixManager.h"
-#include "FieldCuttingHelper.h"
 #include <math.h>
 #include <time.h>
 #include <stack>
