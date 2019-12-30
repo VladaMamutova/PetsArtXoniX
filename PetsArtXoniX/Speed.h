@@ -11,10 +11,10 @@ inline const char* ToString(SPEED speed)
 {
 	switch (speed)
 	{
-	case LOW: return "Низкая";
-	case AVERAGE: return "Средняя";
-	case HIGH: return "Большая";
-	case VERY_HIGH: return "Высокая";
+	case LOW: return "низкая";
+	case AVERAGE: return "средняя";
+	case HIGH: return "большая";
+	case VERY_HIGH: return "высокая";
 	default: return "[Unknown Speed]";
 	}
 }

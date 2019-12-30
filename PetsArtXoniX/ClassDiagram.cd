@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="EnemyCircle">
+    <Position X="4.5" Y="6" Width="2.25" />
+    <InheritanceLine Type="SimpleCircle">
+      <InheritanceModifierLabel ManuallyPlaced="true">
+        <Position X="0.212" Y="0.427" />
+      </InheritanceModifierLabel>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>EAAABAAAAIAAACAAAAAAAAAAAAAACACAAAAggEAAAAA=</HashCode>
+      <FileName>EnemyCircle.h</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="MainCircle">
+    <Position X="4.5" Y="2" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAIIAAAAAAAAAAAAAAAGACAAACgACAAAAA=</HashCode>
+      <FileName>MainCircle.h</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="SimpleCircle">
+    <Position X="1.5" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>BgACAAAACCAAAAYAAAAAAAAAAAAAAgCA4AhgAAiAAAA=</HashCode>
+      <FileName>SimpleCircle.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XonixManager">
+    <Position X="7.25" Y="0.5" Width="2" />
+    <NestedTypes>
+      <Enum Name="XonixManager::FieldCellState" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>XonixManager.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>IAKECGAIAAIgghQiQAQAAJCEBAtmIVCAAqDgADKgCgA=</HashCode>
+      <FileName>XonixManager.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="IMovable">
+    <Position X="4.5" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IMovable.h</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

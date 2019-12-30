@@ -20,6 +20,7 @@ using namespace std;
 #define ID_MOVE_TOP 1007
 #define ID_MOVE_RIGHT 1008
 #define ID_MOVE_BOTTOM 1009
+#define ID_RESTART 1010
 
 #define RESULT_LINE_LENGTH 100
 
@@ -33,6 +34,7 @@ BOOL RegWinClass(WNDPROC, LPCTSTR, HBRUSH);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK DialogProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI DrawCirclesProc(LPVOID);
+VOID UpdateStatusBar();
 
 HINSTANCE hInst;
 TCHAR progName[] = "MainWindow";
@@ -41,7 +43,8 @@ static HWND statusBar;
 static HWND mainMenu;
 static HWND button;
 static HWND toolBar;
-static TBBUTTON toolBarButtons[8];
+static TBBUTTON toolBarButtons[10];
+static HMENU popupMenu;
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 {
@@ -86,7 +89,8 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	switch (msg) {
 	case WM_CREATE: {
-		HMENU popupMenu, mainMenu;
+		soundsOn = true;
+		HMENU mainMenu;
 		AppendMenu((popupMenu = CreatePopupMenu()), MF_ENABLED | MFT_STRING,
 			(UINT_PTR)ID_START_NEW_GAME, "Начать новую игру");
 		AppendMenu(popupMenu, MFT_STRING, (UINT_PTR)ID_SETTINGS, "Настройки");
@@ -97,20 +101,17 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		DrawMenuBar(hWnd);
 
 		statusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "", hWnd, ID_STATUS_BAR);
+		// Для разделения статусбара на несколько частей 
+		// инициализирем массив ширин его частей и передаём элементу.
+		int parts[5];
+		parts[0] = 90;
+		parts[1] = 150;
+		parts[2] = 210;
+		parts[3] = 270;
+		parts[4] = -1;
+		SendMessage(statusBar, SB_SETPARTS, 5, (LPARAM)parts);
 
-		//CreateWindow("static", "Звуки:",
-		//	WS_CHILD | WS_VISIBLE | SS_CENTER,
-		//	10, rect.bottom - 50, 50, 20, hWnd, NULL, NULL, NULL);
-		//HWND soundsOnButton = CreateWindow("button", "Вкл.",
-		//	WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-		//	70, rect.bottom - 50, 60, 20, hWnd, (HMENU)ID_SOUNDS_ON, hInst, NULL);
-		//CreateWindow("button", "Выкл.",
-		//	WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-		//	130, rect.bottom - 50, 60, 20, hWnd, (HMENU)ID_SOUNDS_OFF, hInst, NULL);
-		//SendMessage(soundsOnButton, BM_SETCHECK, 1, 0);
-		soundsOn = true;
-
-		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT, ID_TOOLBAR,
+		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | CCS_NODIVIDER, ID_TOOLBAR,
 			0, HINST_COMMCTRL, IDB_STD_LARGE_COLOR, 0, 0, 0, 0, 0, 0, sizeof(TBBUTTON));
 
 		HIMAGELIST imageList;
@@ -120,6 +121,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			int indexTop;
 			int indexRight;
 			int indexBottom;
+			int indexRestart;
 
 			bitmap = (HBITMAP)LoadImage(NULL, "resources//left-arrow.bmp",
 				IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -139,6 +141,11 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			bitmap = (HBITMAP)LoadImage(NULL, "resources//bottom-arrow.bmp",
 				IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 			indexBottom = ImageList_Add(imageList, bitmap, (HBITMAP)NULL);
+			DeleteObject(bitmap);
+
+			bitmap = (HBITMAP)LoadImage(NULL, "resources//restart.bmp",
+				IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+			indexRestart = ImageList_Add(imageList, bitmap, (HBITMAP)NULL);
 			DeleteObject(bitmap);
 
 			int imageListId = 0;
@@ -168,20 +175,14 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			toolBarButtons[7].idCommand = ID_MOVE_BOTTOM;
 			toolBarButtons[7].fsState = TBSTATE_ENABLED;
 
-			SendMessage(toolBar, TB_ADDBUTTONS, 8, (LPARAM)(&toolBarButtons));
+			toolBarButtons[8].fsStyle = TBSTYLE_SEP;
+
+			toolBarButtons[9].iBitmap = MAKELONG(indexRestart, imageListId);
+			toolBarButtons[9].idCommand = ID_RESTART;
+			toolBarButtons[9].fsState = TBSTATE_ENABLED;
+
+			SendMessage(toolBar, TB_ADDBUTTONS, 10, (LPARAM)(&toolBarButtons));
 		}
-
-		/*button = CreateWindow("button", "Начать заново", WS_TABSTOP | WS_CHILD | WS_OVERLAPPED|
-			WS_VISIBLE | WS_BORDER, rect.right - 170, 4, 160, 22, hWnd, (HMENU)ID_BUTTON, NULL, NULL);
-*/
-//edit_window = CreateWindowEx(WS_EX_STATICEDGE, L"edit", NULL,
-//	WS_CHILD | WS_VISIBLE | ES_MULTILINE, 230, 400, 30, 20, hWnd, (HMENU)EDIT_BOX, NULL, NULL);
-
-/*	statusBar = CreateWindowEx("statusbar", "", NULL, WS_CHILD | WS_VISIBLE,
-		0, rect.bottom - 40, rect.right - rect.left, 40, hWnd, NULL, hInst, NULL);*/
-		//button = CreateWindow("button", "Одиночный выстрел",
-		//	WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 0, 0, 300, 20, hWnd,
-		//	(HMENU)ID_BUTTON, NULL, NULL);
 
 		RECT rect;
 		GetClientRect(hWnd, &rect);
@@ -189,14 +190,15 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		xonixManager = new XonixManager(Rect(0, 40, rect.right - rect.left,
 			rect.bottom - rect.top - 70));
 		xonixManager->StartNewGame();
+		UpdateStatusBar();
 		drawCirclesThread = CreateThread(NULL, 0, DrawCirclesProc, (LPVOID)hWnd, 0, NULL);
 		gameStarted = true;
 
-		TCHAR result[50];
-		wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
-		SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
-
 		break;
+	}
+	case WM_CONTEXTMENU: {
+		TrackPopupMenu(popupMenu, TPM_RIGHTBUTTON |	TPM_TOPALIGN |
+			TPM_LEFTALIGN, LOWORD(lParam), HIWORD(lParam), 0, hWnd, NULL);
 	}
 	case WM_KEYDOWN:
 	{
@@ -225,13 +227,11 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	case WM_COMMAND: {
 		switch (LOWORD(wParam)) {
 		case ID_START_NEW_GAME:
-		{
+		case ID_RESTART: {
 			xonixManager->StartNewGame();
 			InvalidateRect(hWnd, NULL, TRUE);
 			UpdateWindow(hWnd);
-			TCHAR result[50];
-			wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
-			SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
+			UpdateStatusBar();
 			break;
 		}
 		case ID_MOVE_LEFT: {
@@ -253,19 +253,17 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		case ID_SETTINGS: {
 			if (DialogBox(NULL, (LPCTSTR)IDD_DIALOGBAR, hWnd,
 				(DLGPROC)DialogProc) == IDOK) {
-				//graph.SetIntervalX(xMin, xMax);
+				xonixManager->StartNewGame();
+				UpdateWindow(hWnd);
 				InvalidateRect(hWnd, NULL, TRUE);
+				UpdateStatusBar();
 			}
+			break;
 		}
-						  /*case ID_BUTTON: {
-							  xonixManager->StartNewGame();
-							  InvalidateRect(hWnd, NULL, TRUE);
-							  UpdateWindow(hWnd);
-							  TCHAR result[50];
-							  wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
-							  SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
-							  break;
-						  }*/
+		case ID_EXIT: {
+			DestroyWindow(hWnd);
+			break;
+		}
 		}
 		break;
 	}
@@ -331,40 +329,31 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 DWORD WINAPI DrawCirclesProc(LPVOID hwnd) {
 	HWND hWnd = (HWND)hwnd;
 	HDC hdc = GetDC(hWnd);
+	int round = 0;
 	while (true) {
 		while (gameStarted) {
+			round = xonixManager->GetRound();
 			if (xonixManager->MoveCircles(hdc)) {
-				InvalidateRect(hWnd, NULL, TRUE);
-				UpdateWindow(hWnd);
-
-				TCHAR result[50];
-				wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
-				SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
-
 				if (xonixManager->IsGameOver()) {
 					if (soundsOn) {
 						PlaySound("resources//game-over.wav", NULL, SND_FILENAME | SND_ASYNC);
 					}
-					MessageBox(hWnd, "Вы проиграли :с", "Игра закончена", MB_OK | MB_APPLMODAL);
+					MessageBox(hWnd, "Вы проиграли :с", "Окончание раунда", MB_OK | MB_APPLMODAL);
 					xonixManager->StartNewGame();
-					InvalidateRect(hWnd, NULL, TRUE);
-					UpdateWindow(hWnd);
-					wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
-					SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
 				}
-
-				if (xonixManager->IsAWin())
-				{
+				else if (xonixManager->IsAWin()) {
 					if (soundsOn) {
 						PlaySound("resources//winner.wav", NULL, SND_FILENAME | SND_ASYNC);
 					}
-					MessageBox(hWnd, "Победа!!!", "Игра закончена", MB_OK | MB_APPLMODAL);
-					xonixManager->StartNewGame();
 					InvalidateRect(hWnd, NULL, TRUE);
 					UpdateWindow(hWnd);
-					wsprintf(result, "Захвачено %d%% территории", (int)xonixManager->GetCapturedFieldPersentage());
-					SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
+					UpdateStatusBar();
+					MessageBox(hWnd, "Раунд пройден!!!", "Окончание игры", MB_OK | MB_APPLMODAL);
+					xonixManager->StartNewRound();
 				}
+				InvalidateRect(hWnd, NULL, TRUE);
+				UpdateWindow(hWnd);
+				UpdateStatusBar();
 			}
 			Sleep(xonixManager->GetTimeDelay());
 		}
@@ -381,11 +370,13 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 	static HWND scrollBar;
 	static HWND list;
 	static HWND comboBox;
-
+	
 	// Обязательно static, чтобы при обрабоке новых
 	// сообщений окна значения сохранялись.
 	static int enemyCount = xonixManager->GetEnemyCount();
 	static int speedIndex = xonixManager->GetSpeed();
+	static int lives = xonixManager->GetLives();
+
 	switch (msg)
 	{
 	case WM_INITDIALOG:
@@ -400,7 +391,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 
 		// Выводим количество врагов.
 		TCHAR enemyCountString[10];
-		sprintf_s(enemyCountString, "%d %s", xonixManager->GetEnemyCount(), "враг");
+		sprintf_s(enemyCountString, "%d %s", enemyCount, "враг");
 		if (enemyCount % 10 > 1 && enemyCount % 10 < 5) {
 			lstrcat(enemyCountString, "а");
 		}
@@ -424,6 +415,10 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		SendMessage(comboBox, CB_SETCURSEL, speedIndex, 0);
 		SendMessage(comboBox, CB_SETEXTENDEDUI, 1, 0);
 
+		// Устанавливаем значение количества жизней в игре.
+		
+		CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_CHECKED);
+
 		// Загружаем список результатов.
 		list = GetDlgItem(hDlg, IDC_LISTBOX_RESULTS);
 		HANDLE file = CreateFileA(  // функция создания ANSI
@@ -431,7 +426,6 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL, NULL);
 
-		// Загрузка списка результатов.
 		TCHAR buffer[1];
 		DWORD byteRead;
 		TCHAR line[RESULT_LINE_LENGTH];
@@ -447,8 +441,9 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 						i++;
 					}
 				} while (byteRead != 0 && buffer[0] != '\r' && buffer[0] != '\n');
-				if(byteRead)
-				line[i] = '\0';
+				if (byteRead) {
+					line[i] = '\0';
+				}
 				if (i > 0) {
 					SendMessage(list, LB_ADDSTRING, 0, (LPARAM)line);
 				}
@@ -521,7 +516,6 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			return FALSE;
 		}
 		case IDC_COMBO_ENEMY_SPEED: {
-			char item[150];
 			if (HIWORD(wParam) == CBN_SELCHANGE) { // CBN_SELCHANGE - изменился номер выбранной строки
 				int selectedIndex = (int)SendMessage(comboBox, CB_GETCURSEL, 0, 0L);
 				if (selectedIndex != CB_ERR) // если индекс != -1
@@ -529,6 +523,24 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 					speedIndex = selectedIndex;
 				}
 			}
+			return FALSE;
+		}
+		case IDC_CHECK_1_LIFE: {
+			CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_5_LIVES, BST_UNCHECKED);
+			lives = 1;
+			return FALSE;
+		}
+		case IDC_CHECK_3_LIVES: {
+			CheckDlgButton(hDlg, IDC_CHECK_1_LIFE, BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_5_LIVES, BST_UNCHECKED);
+			lives = 3;
+			return FALSE;
+		}
+		case IDC_CHECK_5_LIVES: {
+			CheckDlgButton(hDlg, IDC_CHECK_1_LIFE, BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_UNCHECKED);
+			lives = 5;
 			return FALSE;
 		}
 		case IDC_BUTTON_SAVE_RESULT: {
@@ -542,23 +554,33 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			}
 
 			TCHAR result[RESULT_LINE_LENGTH];
-			sprintf_s(result, "%s: %d раундов, %d жизней, %d врагов, %s скорость\n",
-				playerName, 0, 0, xonixManager->GetEnemyCount(), "медленная");
+			sprintf_s(result, "%s: раунд %d, жизней %d, врагов %d, %s скорость\n",
+				playerName, xonixManager->GetRound(), xonixManager->GetLives(),
+				xonixManager->GetEnemyCount(), ToString((SPEED)xonixManager->GetSpeed()));
 
 			HANDLE file = CreateFile("result.txt", GENERIC_WRITE, 0, NULL,
-				CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-			SetFilePointer(file, 0, NULL, FILE_END); // Добавляем данные в конец.
-			WriteFile(file, result, strlen(result), NULL, NULL);
-			CloseHandle(file);
+				OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (file != INVALID_HANDLE_VALUE)
+			{
+				SetFilePointer(file, 0, NULL, FILE_END); // Добавляем данные в конец.
+				WriteFile(file, result, strlen(result), NULL, NULL);
+				CloseHandle(file);
+			}
 			SendMessage(list, LB_ADDSTRING, 0, (LPARAM)result);
-
 			return FALSE;
 		}
 		case IDOK: {
-			xonixManager->SetEnemyCount(enemyCount);
-			xonixManager->SetSpeed((SPEED)speedIndex);
-			EndDialog(hDlg, IDOK);
-			return TRUE;
+			if (xonixManager->GetRound() == 1 && xonixManager->GetCapturedFieldPersentage() == 0 ||
+				MessageBox(hDlg, "Ваша игра не закончена. При сохранении настроек текущий "
+				"результат игры будет потерян. Продолжить?", "Настройки",
+				MB_YESNO | MB_APPLMODAL) == IDYES) {
+				xonixManager->SetEnemyCount(enemyCount);
+				xonixManager->SetSpeed((SPEED)speedIndex);
+				xonixManager->SetLives(lives);
+				EndDialog(hDlg, IDOK);
+				return TRUE;
+			}
+			return FALSE;
 		}
 		case IDCANCEL:
 			EndDialog(hDlg, IDCANCEL);
@@ -588,4 +610,17 @@ BOOL RegWinClass(WNDPROC proc, LPCTSTR lpszClassName, HBRUSH backgroundBrush) {
 	w.cbClsExtra = 0;
 	w.cbWndExtra = 0;
 	return RegisterClass(&w) != 0;
+}
+VOID UpdateStatusBar() {
+	TCHAR result[50];
+	wsprintf(result, "Захвачено %d%%", (int)xonixManager->GetCapturedFieldPersentage());
+	SendMessage(statusBar, SB_SETTEXT, (WPARAM)0 | SBT_NOBORDERS, (LPARAM)result);
+	wsprintf(result, "Раунд: %d", xonixManager->GetRound());
+	SendMessage(statusBar, SB_SETTEXT, 1 | SBT_NOBORDERS, (LPARAM)result);
+	wsprintf(result, "Жизни: %d", xonixManager->GetLifeCount());
+	SendMessage(statusBar, SB_SETTEXT, 2 | SBT_NOBORDERS, (LPARAM)result);
+	wsprintf(result, "Врагов: %d", xonixManager->GetEnemyCount());
+	SendMessage(statusBar, SB_SETTEXT, 3 | SBT_NOBORDERS, (LPARAM)result);
+	wsprintf(result, "Скорость: %s", ToString((SPEED)xonixManager->GetSpeed()));
+	SendMessage(statusBar, SB_SETTEXT, 4 | SBT_NOBORDERS, (LPARAM)result);
 }

@@ -9,8 +9,8 @@ using namespace Gdiplus;
 
 XonixManager::XonixManager(Rect gameRect)
 {
-	level = 1;
 	enemyCount = 1;
+	round = 1;
 	lives = 3;
 	speed = SPEED::AVERAGE;
 	isGameOver = false;
@@ -75,6 +75,17 @@ XonixManager::~XonixManager()
 }
 
 void XonixManager::StartNewGame() {
+	lifeCount = lives;
+	round = 0;
+	StartNewRound();
+}
+
+void XonixManager::StartNewRound() {
+	round++;	
+	RestartRound();
+}
+
+void XonixManager::RestartRound() {
 	isAWin = false;
 	isGameOver = false;
 	capturedFieldPercentage = 0;
@@ -105,6 +116,21 @@ bool XonixManager::IsAWin()
 bool XonixManager::GetEnemyCount()
 {
 	return enemyCount;
+}
+
+int XonixManager::GetRound()
+{
+	return round;
+}
+
+int XonixManager::GetLives()
+{
+	return lives;
+}
+
+int XonixManager::GetLifeCount()
+{
+	return lifeCount;
 }
 
 int XonixManager::GetSpeed()
@@ -139,9 +165,9 @@ void XonixManager::LoadPetImage()
 	}
 
 	wchar_t imagePath[500];
-	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[level].Filled);
+	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[round].Filled);
 	petImage = new Image(imagePath);
-	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[level].Outline);
+	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[round].Outline);
 	petImageOutline = new Image(imagePath);
 }
 
@@ -178,6 +204,11 @@ void XonixManager::SetEnemyCount(int enemyCount)
 	this->enemyCount = enemyCount;
 }
 
+void XonixManager::SetLives(int lives)
+{
+	this->lives = lives;
+}
+
 void XonixManager::SetSpeed(SPEED speed)
 {
 	this->speed = speed;
@@ -190,6 +221,8 @@ float XonixManager::GetCapturedFieldPersentage()
 
 bool XonixManager::MoveCircles(HDC hdc) {
 	if (isGameOver) return false;
+	
+	bool newRound = false;
 
 	Direction direction = mainCircle.GetDirection();
 	bool finishMovement = false;
@@ -218,14 +251,20 @@ bool XonixManager::MoveCircles(HDC hdc) {
 			if (capturedFieldPercentage >= capturedFieldPercentageToWin)
 			{
 				isAWin = true;
-				level++;
 			}
 		}
 		break;
 	}
 	case 2:
 	{
-		isGameOver = true;
+		lifeCount--;
+		if (lifeCount == 0) {
+			isGameOver = true;
+		}
+		else {
+			newRound = true;
+			RestartRound();
+		}
 		break;
 	}
 	}
@@ -245,15 +284,12 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		mainCircle.GetRadius() * 2 , mainCircle.GetRadius() * 2 );
 	graphics.FillEllipse(&brush, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
 		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
-/*
-	graphics.DrawEllipse(&pen, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
-		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);*/
 
 	for (size_t i = 0; i < enemyCircles.size(); i++) {
 		Point previousPosition = enemyCircles[i].GetPosition();
 		enemyCircles[i].MoveWithinTheBounds(Rect(0, 0, fieldWidth - 1, fieldHeight - 1));
 
-				
+		// Проверяем, не находится ли шарик на границе.
 		if ((fieldCells[previousPosition.Y ][enemyCircles[i].GetX()] == 1))
 		{
 			enemyCircles[i].SetX(previousPosition.X);
@@ -269,11 +305,18 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		DrawCircle(hdc, enemyCircles[i], previousPosition);
 		
 		if (fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == 2) {
-			isGameOver = true;
+			lifeCount--;
+			if (lifeCount == 0) {
+				isGameOver = true;
+			}
+			else {
+				newRound = true;
+				RestartRound();
+			}
 		}
 	}
 	
-	return finishMovement || isGameOver;
+	return finishMovement ||newRound || isGameOver;
 }
 
 void XonixManager::OnPaint(HDC hdc) {
@@ -283,20 +326,21 @@ void XonixManager::OnPaint(HDC hdc) {
 
 	if(isGameOver) return;
 
+	LinearGradientBrush borderBrush(Rect (x0, y0, width, height), 
+		Color(240, 190, 40), Color(250, 230, 80), LinearGradientModeForwardDiagonal);
+	Color color = Color(255, 50, 80);
+	SolidBrush backgroundBrush(color);
 	for (int i = 0; i < fieldHeight; i++)
 	{
 		for (int j = 0; j < fieldWidth; j++) {
 			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1) {
-				Rect borderRect(x0, y0, width, height);
-
-				LinearGradientBrush brush(borderRect, Color(240, 190, 40), Color(250, 230, 80), LinearGradientModeForwardDiagonal);
-				graphics.FillRectangle(&brush, Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
+				graphics.FillRectangle(&borderBrush,
+					Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
 			}
 			else if (fieldCells[i][j] == 0)
 			{
-				Color color = Color(255, 50, 80);
-				SolidBrush brush(color);
-				graphics.FillRectangle(&brush, Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
+				graphics.FillRectangle(&backgroundBrush,
+					Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
 			}
 		}
 	}

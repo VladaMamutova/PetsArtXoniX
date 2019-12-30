@@ -46,13 +46,14 @@ private:
 	// ключ - номер уровня,
 	// значение - структура, содержащая пару картинок: заполненную и контур.
 	map <int, PairImages> imagePathes;
-	int level;
-	int lives;
 	
+	int round;
 	int enemyCount;
 	SPEED speed;
 	float capturedFieldPercentage;
 	int capturedFieldPercentageToWin = 80;
+	int lifeCount;
+	int lives;
 
 	bool isGameOver;
 	bool isAWin;
@@ -71,9 +72,14 @@ public:
 	XonixManager(Gdiplus::Rect);
 	~XonixManager();
 	void StartNewGame();
+	void StartNewRound();
+	void RestartRound();
 	bool IsGameOver();
 	bool IsAWin();
 	bool GetEnemyCount();
+	int GetRound();
+	int GetLives();
+	int GetLifeCount();
 	int GetSpeed();
 	int GetTimeDelay();
 	float GetCapturedFieldPersentage();
@@ -82,6 +88,7 @@ public:
 	void SetLeftMove();
 	void SetRightMove();
 	void SetEnemyCount(int);
+	void SetLives(int);
 	void SetSpeed(SPEED);
 	bool MoveCircles(HDC);	
 	void OnPaint(HDC);
