@@ -316,6 +316,7 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		if (drawCirclesThread != NULL) {
 			PostThreadMessage((DWORD)drawCirclesThread, WM_QUIT, 0, 0);
 			CloseHandle(drawCirclesThread);
+			Sleep(100);
 		}
 		delete xonixManager;
 		PostQuitMessage(0);
@@ -365,7 +366,7 @@ DWORD WINAPI DrawCirclesProc(LPVOID hwnd) {
 					SendMessage(statusBar, SB_SETTEXT, (WPARAM)0, (LPARAM)result);
 				}
 			}
-			Sleep(100);
+			Sleep(xonixManager->GetTimeDelay());
 		}
 		Sleep(100);
 	}
@@ -379,11 +380,12 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 	static HWND radioButton;
 	static HWND scrollBar;
 	static HWND list;
+	static HWND comboBox;
 
 	// Обязательно static, чтобы при обрабоке новых
 	// сообщений окна значения сохранялись.
 	static int enemyCount = xonixManager->GetEnemyCount();
-	static TCHAR enemyCountString[10];
+	static int speedIndex = xonixManager->GetSpeed();
 	switch (msg)
 	{
 	case WM_INITDIALOG:
@@ -397,6 +399,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		}
 
 		// Выводим количество врагов.
+		TCHAR enemyCountString[10];
 		sprintf_s(enemyCountString, "%d %s", xonixManager->GetEnemyCount(), "враг");
 		if (enemyCount % 10 > 1 && enemyCount % 10 < 5) {
 			lstrcat(enemyCountString, "а");
@@ -412,10 +415,18 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		SetScrollRange(scrollBar, SB_CTL, 1, 6, TRUE);
 		SetScrollPos(scrollBar, SB_CTL, enemyCount, TRUE);
 
+		// Загружаем список возможных скоростей и текущую скорость.
+		comboBox = GetDlgItem(hDlg, IDC_COMBO_ENEMY_SPEED);
+		SendMessage(comboBox, CB_ADDSTRING, 0, (LPARAM)ToString(SPEED::LOW));
+		SendMessage(comboBox, CB_ADDSTRING, 0, (LPARAM)ToString(SPEED::AVERAGE));
+		SendMessage(comboBox, CB_ADDSTRING, 0, (LPARAM)ToString(SPEED::HIGH));
+		SendMessage(comboBox, CB_ADDSTRING, 0, (LPARAM)ToString(SPEED::VERY_HIGH));
+		SendMessage(comboBox, CB_SETCURSEL, speedIndex, 0);
+		SendMessage(comboBox, CB_SETEXTENDEDUI, 1, 0);
+
 		// Загружаем список результатов.
 		list = GetDlgItem(hDlg, IDC_LISTBOX_RESULTS);
-		HANDLE file;
-		file = CreateFileA(  // функция создания ANSI
+		HANDLE file = CreateFileA(  // функция создания ANSI
 			"result.txt", GENERIC_READ,	0, NULL,
 			OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL, NULL);
@@ -483,6 +494,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			enemyCount = 1;
 			EnableScrollBar(statusBar, SB_CTL, ESB_DISABLE_LEFT);
 		}
+		TCHAR enemyCountString[10];
 		sprintf_s(enemyCountString, "%d %s", enemyCount, "враг");
 		if (enemyCount % 10 > 1 && enemyCount % 10 < 5) {
 			lstrcat(enemyCountString, "а");
@@ -506,6 +518,17 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		}
 		case IDC_RADIO_OFF: {
 			soundsOn = false;
+			return FALSE;
+		}
+		case IDC_COMBO_ENEMY_SPEED: {
+			char item[150];
+			if (HIWORD(wParam) == CBN_SELCHANGE) { // CBN_SELCHANGE - изменился номер выбранной строки
+				int selectedIndex = (int)SendMessage(comboBox, CB_GETCURSEL, 0, 0L);
+				if (selectedIndex != CB_ERR) // если индекс != -1
+				{
+					speedIndex = selectedIndex;
+				}
+			}
 			return FALSE;
 		}
 		case IDC_BUTTON_SAVE_RESULT: {
@@ -533,7 +556,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		}
 		case IDOK: {
 			xonixManager->SetEnemyCount(enemyCount);
-			
+			xonixManager->SetSpeed((SPEED)speedIndex);
 			EndDialog(hDlg, IDOK);
 			return TRUE;
 		}

@@ -4,10 +4,10 @@
 
 class SimpleCircle
 {
-private:
+protected:
 	const int DEFAULT_RADIUS = 10;
 	const Gdiplus::Color DEFAULT_COLOR = Gdiplus::Color(0, 0, 0);
-public:
+
 	int x;
 	int y;
 	int radius;

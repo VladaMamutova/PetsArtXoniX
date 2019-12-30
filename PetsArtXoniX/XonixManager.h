@@ -7,6 +7,7 @@
 #include "PairImages.h"
 #include "MainCircle.h"
 #include "EnemyCircle.h"
+#include "Speed.h"
 
 using namespace std;
 using namespace Gdiplus;
@@ -18,6 +19,7 @@ using namespace Gdiplus;
 
 class XonixManager
 {
+public:
 private:
 	enum FieldCellState {
 		EMPTY,
@@ -47,6 +49,7 @@ private:
 	int level;
 	int capturedFieldPercentageToWin = 80;
 	int enemyCount;
+	SPEED speed;
 	float capturedFieldPercentage;
 
 	bool isGameOver;
@@ -67,14 +70,18 @@ public:
 	bool IsGameOver();
 	bool IsAWin();
 	bool GetEnemyCount();
+	int GetSpeed();
+	int GetTimeDelay();
 	void StartNewGame();
 	void SetTopMove();
 	void SetBottomMove();
 	void SetLeftMove();
 	void SetRightMove();
 	void SetEnemyCount(int);
+	void SetSpeed(SPEED);
 	float GetCapturedFieldPersentage();
 	bool MoveCircle(HDC);
+	bool MoveEnemies(HDC);
 	void OnPaint(HDC);
 	void DrawCircle(HDC, SimpleCircle, Point);
 	void AddPointToMainCirclePath();

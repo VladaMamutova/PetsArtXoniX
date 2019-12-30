@@ -51,7 +51,7 @@ void EnemyCircle::MoveWithinTheBounds(Rect bounds) {
 		deltaX = -deltaX;
 		x += deltaX;
 	}
-	else if (x >= bounds.Width - 1) {
+	else if (x >= bounds.Width) {
 		deltaX = -deltaX;
 		x += deltaX;
 	}
@@ -61,7 +61,7 @@ void EnemyCircle::MoveWithinTheBounds(Rect bounds) {
 		deltaY = -deltaY;
 		y += deltaY;
 	}
-	else if (y >= bounds.Height - 1) {
+	else if (y >= bounds.Height) {
 		deltaY = -deltaY;
 		y += deltaY;
 	}

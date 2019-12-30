@@ -91,12 +91,12 @@ void MainCircle::MoveWithinTheBounds(Rect bounds) {
 		x += xDelta;
 	}
 
-	if (y + yDelta  < bounds.GetTop()) {
+	if (y + yDelta < bounds.GetTop()) {
 		y = bounds.GetTop();
 		direction = Direction::None;
 	}
-	else if (y + yDelta >= bounds.Height) {
-		y = bounds.Height - 1;
+	else if (y + yDelta > bounds.Height) {
+		y = bounds.Height;
 		direction = Direction::None;
 	}
 	else {

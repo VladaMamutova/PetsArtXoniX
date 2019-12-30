@@ -129,6 +129,7 @@
     <ClInclude Include="PairImages.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimpleCircle.h" />
+    <ClInclude Include="Speed.h" />
     <ClInclude Include="XonixManager.h" />
   </ItemGroup>
   <ItemGroup>
