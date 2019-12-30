@@ -333,7 +333,7 @@ DWORD WINAPI DrawCirclesProc(LPVOID hwnd) {
 	HDC hdc = GetDC(hWnd);
 	while (true) {
 		while (gameStarted) {
-			if (xonixManager->MoveCircle(hdc)) {
+			if (xonixManager->MoveCircles(hdc)) {
 				InvalidateRect(hWnd, NULL, TRUE);
 				UpdateWindow(hWnd);
 

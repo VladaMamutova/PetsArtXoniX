@@ -11,6 +11,7 @@ XonixManager::XonixManager(Rect gameRect)
 {
 	level = 1;
 	enemyCount = 1;
+	lives = 3;
 	speed = SPEED::AVERAGE;
 	isGameOver = false;
 
@@ -73,6 +74,24 @@ XonixManager::~XonixManager()
 	}
 }
 
+void XonixManager::StartNewGame() {
+	isAWin = false;
+	isGameOver = false;
+	capturedFieldPercentage = 0;
+
+	mainCircle.SetDirection(Direction::None);
+	for (int i = 0; i < fieldHeight; i++) {
+		for (int j = 0; j < fieldWidth; j++) {
+			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
+				fieldCells[i][j] = 1;
+			else fieldCells[i][j] = 0;//EMPTY;
+		}
+	}
+
+	InitMainCircle(fieldWidth / 2, fieldHeight - 1);
+	InitEnemyCircles(Rect(1, 1, fieldWidth - 2, fieldHeight - 2));
+}
+
 bool XonixManager::IsGameOver()
 {
 	return isGameOver;
@@ -102,24 +121,6 @@ int XonixManager::GetTimeDelay() {
 	case VERY_HIGH: return 50;
 	default: return 100;
 	}
-}
-
-void XonixManager::StartNewGame() {
-	isAWin = false;
-	isGameOver = false;
-	capturedFieldPercentage = 0;
-
-	mainCircle.SetDirection(Direction::None);
-	for (int i = 0; i < fieldHeight; i++) {
-		for (int j = 0; j < fieldWidth; j++) {
-			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
-				fieldCells[i][j] = 1;
-			else fieldCells[i][j] = 0;//EMPTY;
-		}
-	}
-
-	InitMainCircle(fieldWidth / 2, fieldHeight - 1);
-	InitEnemyCircles(Rect(1, 1, fieldWidth - 2, fieldHeight - 2));
 }
 
 void XonixManager::LoadPetImage()
@@ -158,22 +159,18 @@ void XonixManager::InitEnemyCircles(Rect bounds) {
 
 void XonixManager::SetTopMove() {
 	mainCircle.SetDirection(Direction::Up);
-	AddPointToMainCirclePath();
 }
 
 void XonixManager::SetBottomMove() {
 	mainCircle.SetDirection(Direction::Down);
-	AddPointToMainCirclePath();
 }
 
 void XonixManager::SetLeftMove() {
 	mainCircle.SetDirection(Direction::Left);
-	AddPointToMainCirclePath();
 }
 
 void XonixManager::SetRightMove() {
 	mainCircle.SetDirection(Direction::Right);
-	AddPointToMainCirclePath();
 }
 
 void XonixManager::SetEnemyCount(int enemyCount)
@@ -191,12 +188,7 @@ float XonixManager::GetCapturedFieldPersentage()
 	return capturedFieldPercentage;
 }
 
-void XonixManager::AddPointToMainCirclePath() {
-	// Добавляем точку текущего положения шарика.
-	mainCirclePath.push_back(Point(max(mainCircle.GetX(), 0), max(mainCircle.GetY(), 0)));
-}
-
-bool XonixManager::MoveCircle(HDC hdc) {
+bool XonixManager::MoveCircles(HDC hdc) {
 	if (isGameOver) return false;
 
 	Direction direction = mainCircle.GetDirection();
@@ -240,7 +232,7 @@ bool XonixManager::MoveCircle(HDC hdc) {
 
 	Color color = mainCircle.GetColor();
 	SolidBrush brush(color);
-		Color darkerColor(max(color.GetR() - 100, 0),
+	Color darkerColor(max(color.GetR() - 100, 0),
 		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
 	Pen pen(darkerColor, 1);
 	SolidBrush darkBrush(darkerColor);
@@ -295,7 +287,10 @@ void XonixManager::OnPaint(HDC hdc) {
 	{
 		for (int j = 0; j < fieldWidth; j++) {
 			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1) {
+				Rect borderRect(x0, y0, width, height);
 
+				LinearGradientBrush brush(borderRect, Color(240, 190, 40), Color(250, 230, 80), LinearGradientModeForwardDiagonal);
+				graphics.FillRectangle(&brush, Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
 			}
 			else if (fieldCells[i][j] == 0)
 			{
@@ -305,12 +300,6 @@ void XonixManager::OnPaint(HDC hdc) {
 			}
 		}
 	}
-	Rect borderRect(x0, y0, width, height);
-
-	LinearGradientBrush brush(borderRect, Color(240, 190, 40), Color(250, 230, 80), LinearGradientModeForwardDiagonal);
-	Pen pen(&brush, (REAL)BORDER_THICKNESS);
-	pen.SetAlignment(PenAlignmentInset);
-	graphics.DrawRectangle(&pen, borderRect);
 }
 
 void XonixManager::DrawCircle(HDC hdc, SimpleCircle circle, Point previousPosition)

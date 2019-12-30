@@ -47,10 +47,12 @@ private:
 	// значение - структура, содержащая пару картинок: заполненную и контур.
 	map <int, PairImages> imagePathes;
 	int level;
-	int capturedFieldPercentageToWin = 80;
+	int lives;
+	
 	int enemyCount;
 	SPEED speed;
 	float capturedFieldPercentage;
+	int capturedFieldPercentageToWin = 80;
 
 	bool isGameOver;
 	bool isAWin;
@@ -58,34 +60,29 @@ private:
 	MainCircle mainCircle;
 	vector<EnemyCircle> enemyCircles;
 
-	vector<Point> mainCirclePath;
-	vector<Rect> capturedField;
-
 	void LoadPetImage();
 	void InitMainCircle(int x, int y);
 	void InitEnemyCircles(Rect bounds);
+	void DrawCircle(HDC, SimpleCircle, Point);
+	void CheckCell(int x, int y);
+	void UpdateField();
+	void ZoomImageToFitRect(int*, int*, int, int);
 public:
 	XonixManager(Gdiplus::Rect);
 	~XonixManager();
+	void StartNewGame();
 	bool IsGameOver();
 	bool IsAWin();
 	bool GetEnemyCount();
 	int GetSpeed();
 	int GetTimeDelay();
-	void StartNewGame();
+	float GetCapturedFieldPersentage();
 	void SetTopMove();
 	void SetBottomMove();
 	void SetLeftMove();
 	void SetRightMove();
 	void SetEnemyCount(int);
 	void SetSpeed(SPEED);
-	float GetCapturedFieldPersentage();
-	bool MoveCircle(HDC);
-	bool MoveEnemies(HDC);
+	bool MoveCircles(HDC);	
 	void OnPaint(HDC);
-	void DrawCircle(HDC, SimpleCircle, Point);
-	void AddPointToMainCirclePath();
-	void CheckCell(int x, int y);
-	void UpdateField();
-	void ZoomImageToFitRect(int*, int*, int, int);
 };
