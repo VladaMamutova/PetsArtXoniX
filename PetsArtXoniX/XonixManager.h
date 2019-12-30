@@ -4,7 +4,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "PairImages.h"
 #include "MainCircle.h"
 #include "EnemyCircle.h"
 #include "Speed.h"
@@ -12,7 +11,8 @@
 using namespace std;
 using namespace Gdiplus;
 
-#define LEVEL_COUNT 1
+#define IMAGE_COUNT 10
+#define PATH_LENGTH 500
 #define CIRCLE_RADIUS 4
 #define CELL_SIZE 10
 #define BORDER_THICKNESS CELL_SIZE
@@ -22,30 +22,25 @@ class XonixManager
 public:
 private:
 	enum FieldCellState {
-		EMPTY,
-		MARKED,
-		FILLED
+		EMPTY = 0,
+		BORDER = 1,
+		MARKED = 2
 	};
 
 	int fieldWidth;
 	int fieldHeight;
 	int** fieldCells;
-
-	Image *petImage; // Текущая цветная заполненная картинка.
-	Image *petImageOutline; // Текущая картинка-контур.
 	
+	// Словарь картинок: ключ - номер уровня, значение - путь к файлу картинки.
+	map <int, wchar_t[PATH_LENGTH]> imagePathes;
+
+	Image *petImage; // Текущая картинка.
+	int imageWidth;
+	int imageHeight;
+
 	// Верхний левый угол картинки.
 	int x0;
 	int y0;
-
-	// Размер картинки.
-	int width;
-	int height;
-
-	// Словарь картинок:
-	// ключ - номер уровня,
-	// значение - структура, содержащая пару картинок: заполненную и контур.
-	map <int, PairImages> imagePathes;
 	
 	int round;
 	int enemyCount;

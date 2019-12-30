@@ -126,7 +126,6 @@
     <ClInclude Include="EnemyCircle.h" />
     <ClInclude Include="IMovable.h" />
     <ClInclude Include="MainCircle.h" />
-    <ClInclude Include="PairImages.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimpleCircle.h" />
     <ClInclude Include="Speed.h" />

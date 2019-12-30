@@ -16,35 +16,34 @@ XonixManager::XonixManager(Rect gameRect)
 	isGameOver = false;
 
 	// Определяем словарь картинок.
-	wchar_t name[LEVEL_COUNT][50] = { L"yorkshire-terrier" };
-	for (int i = 1; i <= LEVEL_COUNT; i++) {
-		swprintf_s(imagePathes[i].Filled, L"%ls.jpg", name[i - 1]);
-		swprintf_s(imagePathes[i].Outline, L"%ls.jpg", name[i - 1]);
+	wchar_t name[IMAGE_COUNT][50] = { L"yorkshire-terrier" };
+	for (int i = 0; i < IMAGE_COUNT; i++) {
+		swprintf_s(imagePathes[i], L"%ls.jpg", name[i]);
 	}
 	LoadPetImage();
 
 	// По размеру окна вычисляем размер картинки.
-	width = petImage->GetWidth();
-	height = petImage->GetHeight();
-	ZoomImageToFitRect(&width, &height,
+	imageWidth = petImage->GetWidth();
+	imageHeight = petImage->GetHeight();
+	ZoomImageToFitRect(&imageWidth, &imageHeight,
 		gameRect.Width,
 		gameRect.Height);
 
-	width -= 2 * BORDER_THICKNESS;
-	height -= 2 * BORDER_THICKNESS;
+	imageWidth -= 2 * BORDER_THICKNESS;
+	imageHeight -= 2 * BORDER_THICKNESS;
 
 	// Корректируем размеры с учётом размера ячейки поля.
-	width -= width % CELL_SIZE;
-	height -= height % CELL_SIZE;
+	imageWidth -= imageWidth % CELL_SIZE;
+	imageHeight -= imageHeight % CELL_SIZE;
 
 	// Находим верхний левый отступ от краёв окна так,
 	// чтобы картинка размещалась посередине.
-	x0 = (gameRect.Width - width) / 2 + gameRect.GetLeft();
-	y0 = (gameRect.Height - height) / 2 + gameRect.GetTop();
+	x0 = (gameRect.Width - imageWidth) / 2 + gameRect.GetLeft();
+	y0 = (gameRect.Height - imageHeight) / 2 + gameRect.GetTop();
 
 	// Вычисляем размер поля по количеству ячеек.
-	fieldWidth = width / CELL_SIZE;
-	fieldHeight = height / CELL_SIZE;
+	fieldWidth = imageWidth / CELL_SIZE;
+	fieldHeight = imageHeight / CELL_SIZE;
 
 	// Создаём поле с пустыми ячейками.
 	fieldCells = new int*[fieldHeight];
@@ -69,9 +68,6 @@ XonixManager::~XonixManager()
 	if (petImage) {
 		delete petImage;
 	}
-	if (petImageOutline) {
-		delete petImageOutline;
-	}
 }
 
 void XonixManager::StartNewGame() {
@@ -94,8 +90,8 @@ void XonixManager::RestartRound() {
 	for (int i = 0; i < fieldHeight; i++) {
 		for (int j = 0; j < fieldWidth; j++) {
 			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
-				fieldCells[i][j] = 1;
-			else fieldCells[i][j] = 0;//EMPTY;
+				fieldCells[i][j] = BORDER;
+			else fieldCells[i][j] = EMPTY;
 		}
 	}
 
@@ -165,10 +161,8 @@ void XonixManager::LoadPetImage()
 	}
 
 	wchar_t imagePath[500];
-	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[round].Filled);
+	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[round - 1]);
 	petImage = new Image(imagePath);
-	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[round].Outline);
-	petImageOutline = new Image(imagePath);
 }
 
 void XonixManager::InitMainCircle(int x, int y) {
@@ -232,14 +226,14 @@ bool XonixManager::MoveCircles(HDC hdc) {
 	mainCircle.MoveWithinTheBounds(Rect(0, 0, fieldWidth - 1, fieldHeight - 1));
 	switch (fieldCells[mainCircle.GetY()][mainCircle.GetX()])
 	{
-	case 0:
+	case EMPTY:
 	{
-		fieldCells[mainCircle.GetY()][mainCircle.GetX()] = 2;
+		fieldCells[mainCircle.GetY()][mainCircle.GetX()] = MARKED;
 		break;
 	}
-	case 1:
+	case BORDER:
 	{
-		if (fieldCells[prevY][prevX] == 2) {
+		if (fieldCells[prevY][prevX] == MARKED) {
 			mainCircle.SetDirection(Direction::None);
 
 			for (size_t i = 0; i < enemyCircles.size(); i++)
@@ -255,7 +249,7 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		}
 		break;
 	}
-	case 2:
+	case MARKED:
 	{
 		lifeCount--;
 		if (lifeCount == 0) {
@@ -290,13 +284,13 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		enemyCircles[i].MoveWithinTheBounds(Rect(0, 0, fieldWidth - 1, fieldHeight - 1));
 
 		// Проверяем, не находится ли шарик на границе.
-		if ((fieldCells[previousPosition.Y ][enemyCircles[i].GetX()] == 1))
+		if ((fieldCells[previousPosition.Y ][enemyCircles[i].GetX()] == BORDER))
 		{
 			enemyCircles[i].SetX(previousPosition.X);
 			enemyCircles[i].ReverseXDirection();
 		} 
 
-		if ((fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == 1))
+		if ((fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == BORDER))
 		{
 			enemyCircles[i].SetY(previousPosition.Y);
 			enemyCircles[i].ReverseYDirection();
@@ -304,7 +298,7 @@ bool XonixManager::MoveCircles(HDC hdc) {
 
 		DrawCircle(hdc, enemyCircles[i], previousPosition);
 		
-		if (fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == 2) {
+		if (fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == MARKED) {
 			lifeCount--;
 			if (lifeCount == 0) {
 				isGameOver = true;
@@ -322,11 +316,11 @@ bool XonixManager::MoveCircles(HDC hdc) {
 void XonixManager::OnPaint(HDC hdc) {
 	Graphics graphics(hdc);
 
-	graphics.DrawImage(petImageOutline, x0, y0, width, height);
+	graphics.DrawImage(petImage, x0, y0, imageWidth, imageHeight);
 
 	if(isGameOver) return;
 
-	LinearGradientBrush borderBrush(Rect (x0, y0, width, height), 
+	LinearGradientBrush borderBrush(Rect (x0, y0, imageWidth, imageHeight), 
 		Color(240, 190, 40), Color(250, 230, 80), LinearGradientModeForwardDiagonal);
 	Color color = Color(255, 50, 80);
 	SolidBrush backgroundBrush(color);
@@ -337,7 +331,7 @@ void XonixManager::OnPaint(HDC hdc) {
 				graphics.FillRectangle(&borderBrush,
 					Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
 			}
-			else if (fieldCells[i][j] == 0)
+			else if (fieldCells[i][j] == EMPTY)
 			{
 				graphics.FillRectangle(&backgroundBrush,
 					Rect(x0 + j * CELL_SIZE, y0 + i * CELL_SIZE, CELL_SIZE, CELL_SIZE));
@@ -378,27 +372,28 @@ void XonixManager::CheckCell(int x, int y)
 	CordinateStack.push(x);
 	CordinateStack.push(y);
 	while (CordinateStack.empty() == false) {
-		if (fieldCells[y][x] == 0) 
+		if (fieldCells[y][x] == EMPTY) {
 			fieldCells[y][x] = -1;
-		if (fieldCells[y - 1][x] == 0)
+		}
+		if (fieldCells[y - 1][x] == EMPTY)
 		{
 			CordinateStack.push(x);
 			CordinateStack.push(y);
 			y--;
 		}
-		else if (fieldCells[y + 1][x] == 0) // 0
+		else if (fieldCells[y + 1][x] == EMPTY)
 		{
 			CordinateStack.push(x);
 			CordinateStack.push(y);
 			y++;
 		}
-		else if (fieldCells[y][x - 1] == 0) //0
+		else if (fieldCells[y][x - 1] == EMPTY)
 		{
 			CordinateStack.push(x);
 			CordinateStack.push(y);
 			x--;
 		}
-		else if (fieldCells[y][x + 1] == 0)
+		else if (fieldCells[y][x + 1] == EMPTY)
 		{
 			CordinateStack.push(x);
 			CordinateStack.push(y);
@@ -412,21 +407,23 @@ void XonixManager::CheckCell(int x, int y)
 			CordinateStack.pop();
 		}
 	}
-
 }
 
 void XonixManager::UpdateField()
 {
 	int ColEnemyCell = 0;
-	for (int i = 0; i < fieldHeight; i++)
-		for (int j = 0; j < fieldWidth; j++)
+	for (int i = 0; i < fieldHeight; i++) {
+		for (int j = 0; j < fieldWidth; j++) {
 			if (fieldCells[i][j] == -1)
 			{
-				fieldCells[i][j] = 0;
+				fieldCells[i][j] = EMPTY;
 				ColEnemyCell++;
 			}
-			else fieldCells[i][j] = 1;
-
+			else {
+				fieldCells[i][j] = BORDER;
+			}
+		}
+	}
 	capturedFieldPercentage = 100 - ((float)ColEnemyCell /
 		((fieldWidth - 1) * (fieldHeight - 1))) * 100;
 }
