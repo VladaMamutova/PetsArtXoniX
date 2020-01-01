@@ -11,8 +11,9 @@
 using namespace std;
 using namespace Gdiplus;
 
-#define IMAGE_COUNT 10
 #define PATH_LENGTH 500
+
+#define IMAGE_COUNT 10
 #define CIRCLE_RADIUS 4
 #define CELL_SIZE 10
 #define BORDER_THICKNESS CELL_SIZE
@@ -32,7 +33,7 @@ private:
 	int fieldHeight;
 	int** fieldCells;
 	
-	// Словарь картинок: ключ - номер уровня, значение - путь к файлу картинки.
+	// Словарь картинок: ключ - номер раунда, значение - путь к файлу картинки.
 	map <int, wchar_t[PATH_LENGTH]> imagePathes;
 
 	Image *petImage; // Текущая картинка.
@@ -57,7 +58,6 @@ private:
 	MainCircle mainCircle;
 	vector<EnemyCircle> enemyCircles;
 
-	void LoadPetImage();
 	void InitMainCircle(int x, int y);
 	void InitEnemyCircles(Rect bounds);
 	void DrawCircle(HDC, SimpleCircle, Point);

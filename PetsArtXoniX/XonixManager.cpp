@@ -9,54 +9,59 @@ using namespace Gdiplus;
 
 XonixManager::XonixManager(Rect gameRect)
 {
+	speed = SPEED::AVERAGE;
 	enemyCount = 1;
 	round = 1;
 	lives = 3;
-	speed = SPEED::AVERAGE;
 	isGameOver = false;
+	isAWin = false;
+	capturedFieldPercentage = 0;
 
-	// Определяем словарь картинок.
-	wchar_t name[IMAGE_COUNT][50] = { L"yorkshire-terrier" };
-	for (int i = 0; i < IMAGE_COUNT; i++) {
-		swprintf_s(imagePathes[i], L"%ls.jpg", name[i]);
+	// Получаем путь к текущей директории.
+	wchar_t path[PATH_LENGTH];
+	GetModuleFileNameW(NULL, path, 500); // Путь к .exe.
+	bool isCropped = false;
+	for (size_t i = sizeof(path) - 1; i > 0 && !isCropped; i--)
+	{
+		if (path[i] == '\\') // На последнем слэше обрезаем путь.
+		{
+			path[i] = '\0';
+			isCropped = true;
+		}
 	}
-	LoadPetImage();
+
+	// Заполняем словарь картинок.
+	wchar_t name[IMAGE_COUNT][50] = { L"yorkshire-terrier.jpg",
+		L"siamese-cat.jpg", L"spitz-in-tulips.jpg", L"cat-in-the-pant-lag.jpg",
+		 L"little-labrador.jpg", L"fluffy-cat.jpg", L"dog-behind-the-wheel.jpg",
+		 L"cat-with-glasses.jpg", L"dog-in-bubles.jpg", L"cat-in-the-bed.jpg" };
+	for (int i = 0; i < IMAGE_COUNT; i++) {
+		swprintf_s(imagePathes[i + 1], L"%ls\\img\\%ls", path, name[i]);
+	}
+
+	petImage = new Image(imagePathes[round]);
 
 	// По размеру окна вычисляем размер картинки.
 	imageWidth = petImage->GetWidth();
 	imageHeight = petImage->GetHeight();
 	ZoomImageToFitRect(&imageWidth, &imageHeight,
-		gameRect.Width,
-		gameRect.Height);
+		gameRect.Width, gameRect.Height);
 
-	imageWidth -= 2 * BORDER_THICKNESS;
-	imageHeight -= 2 * BORDER_THICKNESS;
-
-	// Корректируем размеры с учётом размера ячейки поля.
-	imageWidth -= imageWidth % CELL_SIZE;
-	imageHeight -= imageHeight % CELL_SIZE;
-
+	// Корректируем размеры с учётом размера ячейки поля и рамки.
+	imageWidth -= imageWidth % CELL_SIZE + 2 * BORDER_THICKNESS;
+	imageHeight -= imageHeight % CELL_SIZE + 2 * BORDER_THICKNESS;
+	
 	// Находим верхний левый отступ от краёв окна так,
 	// чтобы картинка размещалась посередине.
 	x0 = (gameRect.Width - imageWidth) / 2 + gameRect.GetLeft();
 	y0 = (gameRect.Height - imageHeight) / 2 + gameRect.GetTop();
 
-	// Вычисляем размер поля по количеству ячеек.
+	// Вычисляем размер поля по количеству ячеек и создаём его.
 	fieldWidth = imageWidth / CELL_SIZE;
 	fieldHeight = imageHeight / CELL_SIZE;
-
-	// Создаём поле с пустыми ячейками.
 	fieldCells = new int*[fieldHeight];
 	for (int i = 0; i < fieldHeight; ++i)
 		fieldCells[i] = new int[fieldWidth];
-
-	for (int i = 0; i < fieldHeight; i++) {
-		for (int j = 0; j < fieldWidth; j++) {
-			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
-				fieldCells[i][j] = CAPTURED;
-			else fieldCells[i][j] = EMPTY;
-		}
-	}
 }
 
 XonixManager::~XonixManager()
@@ -78,7 +83,7 @@ void XonixManager::StartNewGame() {
 
 void XonixManager::StartNewRound() {
 	round++;
-	LoadPetImage();
+	petImage = new Image(imagePathes[(round - 1) % IMAGE_COUNT + 1]);
 	RestartRound();
 }
 
@@ -144,26 +149,6 @@ int XonixManager::GetTimeDelay() {
 	case VERY_HIGH: return 50;
 	default: return 100;
 	}
-}
-
-void XonixManager::LoadPetImage()
-{
-	// Получаем путь к текущей директории.
-	wchar_t path[500];
-	GetModuleFileNameW(NULL, path, 500); // Путь к .exe.
-	bool isCropped = false;
-	for (size_t i = sizeof(path) - 1; i > 0 && !isCropped; i--)
-	{
-		if (path[i] == '\\') // На последнем слэше обрезаем путь.
-		{
-			path[i] = '\0';
-			isCropped = true;
-		}
-	}
-
-	wchar_t imagePath[500];
-	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[(round - 1) % IMAGE_COUNT]);
-	petImage = new Image(imagePath);
 }
 
 void XonixManager::InitMainCircle(int x, int y) {
@@ -246,6 +231,16 @@ bool XonixManager::MoveCircles(HDC hdc) {
 			if (capturedFieldPercentage >= capturedFieldPercentageToWin)
 			{
 				isAWin = true;
+				
+				for (int i = 0; i < fieldHeight; i++) {
+					for (int j = 0; j < fieldWidth; j++)
+					{
+						if (fieldCells[i][j] != CAPTURED) {
+							fieldCells[i][j] = CAPTURED;
+						}
+					}
+				}
+				capturedFieldPercentage = 100;
 			}
 		}
 		break;
@@ -314,7 +309,7 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		}
 	}
 	
-	return finishMovement ||newRound || isGameOver;
+	return finishMovement || newRound || isGameOver;
 }
 
 void XonixManager::OnPaint(HDC hdc) {
@@ -326,8 +321,8 @@ void XonixManager::OnPaint(HDC hdc) {
 
 	LinearGradientBrush borderBrush(Rect (x0, y0, imageWidth, imageHeight), 
 		Color(240, 190, 40), Color(250, 230, 80), LinearGradientModeForwardDiagonal);
-	Color color = Color(255, 50, 80);
-	SolidBrush backgroundBrush(color);
+
+	SolidBrush backgroundBrush(Color(255, 50, 80));
 	for (int i = 0; i < fieldHeight; i++)
 	{
 		for (int j = 0; j < fieldWidth; j++) {
@@ -427,6 +422,7 @@ void XonixManager::UpdateField()
 			}
 		}
 	}
+
 	capturedFieldPercentage = 100 - ((float)enemyCellCount /
 		((fieldWidth - 1) * (fieldHeight - 1))) * 100;
 }
