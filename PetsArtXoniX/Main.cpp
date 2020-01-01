@@ -61,8 +61,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 		return false;
 	}
 
-	int width = 450;
-	int height = 600;
+	int width = 500;
+	int height = 650;
 
 	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPED |
 		WS_CAPTION | WS_SYSMENU,

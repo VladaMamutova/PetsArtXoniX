@@ -53,8 +53,8 @@ XonixManager::XonixManager(Rect gameRect)
 	for (int i = 0; i < fieldHeight; i++) {
 		for (int j = 0; j < fieldWidth; j++) {
 			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
-				fieldCells[i][j] = 1;
-			else fieldCells[i][j] = 0;//EMPTY;
+				fieldCells[i][j] = CAPTURED;
+			else fieldCells[i][j] = EMPTY;
 		}
 	}
 }
@@ -77,7 +77,8 @@ void XonixManager::StartNewGame() {
 }
 
 void XonixManager::StartNewRound() {
-	round++;	
+	round++;
+	LoadPetImage();
 	RestartRound();
 }
 
@@ -90,7 +91,7 @@ void XonixManager::RestartRound() {
 	for (int i = 0; i < fieldHeight; i++) {
 		for (int j = 0; j < fieldWidth; j++) {
 			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
-				fieldCells[i][j] = BORDER;
+				fieldCells[i][j] = CAPTURED;
 			else fieldCells[i][j] = EMPTY;
 		}
 	}
@@ -161,7 +162,7 @@ void XonixManager::LoadPetImage()
 	}
 
 	wchar_t imagePath[500];
-	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[round - 1]);
+	swprintf_s(imagePath, L"%ls\\img\\%ls", path, imagePathes[(round - 1) % IMAGE_COUNT]);
 	petImage = new Image(imagePath);
 }
 
@@ -228,12 +229,12 @@ bool XonixManager::MoveCircles(HDC hdc) {
 	{
 	case EMPTY:
 	{
-		fieldCells[mainCircle.GetY()][mainCircle.GetX()] = MARKED;
+		fieldCells[mainCircle.GetY()][mainCircle.GetX()] = TRAIL;
 		break;
 	}
-	case BORDER:
+	case CAPTURED:
 	{
-		if (fieldCells[prevY][prevX] == MARKED) {
+		if (fieldCells[prevY][prevX] == TRAIL) {
 			mainCircle.SetDirection(Direction::None);
 
 			for (size_t i = 0; i < enemyCircles.size(); i++)
@@ -249,7 +250,7 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		}
 		break;
 	}
-	case MARKED:
+	case TRAIL:
 	{
 		lifeCount--;
 		if (lifeCount == 0) {
@@ -271,11 +272,12 @@ bool XonixManager::MoveCircles(HDC hdc) {
 	SolidBrush darkBrush(darkerColor);
 
 	Graphics graphics(hdc);
+	
 	graphics.FillRectangle(&darkBrush, x0 + prevX * CELL_SIZE, y0 + prevY * CELL_SIZE,
-		mainCircle.GetRadius() * 2 + 0, mainCircle.GetRadius() * 2 + 0);
+			mainCircle.GetRadius() * 2 + 0, mainCircle.GetRadius() * 2 + 0);
 
 	graphics.FillRectangle(&darkBrush, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
-		mainCircle.GetRadius() * 2 , mainCircle.GetRadius() * 2 );
+		mainCircle.GetRadius() * 2 , mainCircle.GetRadius() * 2);
 	graphics.FillEllipse(&brush, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
 		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
 
@@ -283,14 +285,16 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		Point previousPosition = enemyCircles[i].GetPosition();
 		enemyCircles[i].MoveWithinTheBounds(Rect(0, 0, fieldWidth - 1, fieldHeight - 1));
 
-		// Проверяем, не находится ли шарик на границе.
-		if ((fieldCells[previousPosition.Y ][enemyCircles[i].GetX()] == BORDER))
+		// Проверяем, не находится ли шарик на границе
+		// со своей захваченной территорией. В этом случае корректируем
+		// положение для отскока от границы. 
+		if ((fieldCells[previousPosition.Y][enemyCircles[i].GetX()] == CAPTURED))
 		{
 			enemyCircles[i].SetX(previousPosition.X);
 			enemyCircles[i].ReverseXDirection();
 		} 
 
-		if ((fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == BORDER))
+		if ((fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == CAPTURED))
 		{
 			enemyCircles[i].SetY(previousPosition.Y);
 			enemyCircles[i].ReverseYDirection();
@@ -298,7 +302,7 @@ bool XonixManager::MoveCircles(HDC hdc) {
 
 		DrawCircle(hdc, enemyCircles[i], previousPosition);
 		
-		if (fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == MARKED) {
+		if (fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == TRAIL) {
 			lifeCount--;
 			if (lifeCount == 0) {
 				isGameOver = true;
@@ -373,7 +377,7 @@ void XonixManager::CheckCell(int x, int y)
 	CordinateStack.push(y);
 	while (CordinateStack.empty() == false) {
 		if (fieldCells[y][x] == EMPTY) {
-			fieldCells[y][x] = -1;
+			fieldCells[y][x] = ENEMY;
 		}
 		if (fieldCells[y - 1][x] == EMPTY)
 		{
@@ -411,20 +415,19 @@ void XonixManager::CheckCell(int x, int y)
 
 void XonixManager::UpdateField()
 {
-	int ColEnemyCell = 0;
+	int enemyCellCount = 0;
 	for (int i = 0; i < fieldHeight; i++) {
 		for (int j = 0; j < fieldWidth; j++) {
-			if (fieldCells[i][j] == -1)
-			{
+			if (fieldCells[i][j] == ENEMY) {
 				fieldCells[i][j] = EMPTY;
-				ColEnemyCell++;
+				enemyCellCount++;
 			}
 			else {
-				fieldCells[i][j] = BORDER;
+				fieldCells[i][j] = CAPTURED;
 			}
 		}
 	}
-	capturedFieldPercentage = 100 - ((float)ColEnemyCell /
+	capturedFieldPercentage = 100 - ((float)enemyCellCount /
 		((fieldWidth - 1) * (fieldHeight - 1))) * 100;
 }
 

@@ -23,8 +23,9 @@ public:
 private:
 	enum FieldCellState {
 		EMPTY = 0,
-		BORDER = 1,
-		MARKED = 2
+		CAPTURED = 1,
+		TRAIL = 2,
+		ENEMY = 3
 	};
 
 	int fieldWidth;
