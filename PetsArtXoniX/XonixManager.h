@@ -69,7 +69,7 @@ public:
 	// Get-методы.
 	bool IsGameOver();
 	bool IsAWin();
-	bool GetEnemyCount();
+	int GetEnemyCount();
 	int GetRound();
 	int GetLives();
 	int GetLifeCount();

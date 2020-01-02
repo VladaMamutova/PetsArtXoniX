@@ -85,7 +85,7 @@ bool XonixManager::IsAWin()
 	return isAWin;
 }
 
-bool XonixManager::GetEnemyCount()
+int XonixManager::GetEnemyCount()
 {
 	return enemyCount;
 }
@@ -294,13 +294,15 @@ bool XonixManager::MoveCircles(HDC hdc) {
 		DrawCircle(hdc, enemyCircles[i], previousPosition);
 		
 		if (fieldCells[enemyCircles[i].GetY()][enemyCircles[i].GetX()] == TRAIL) {
-			lifeCount--;
-			if (lifeCount == 0) {
-				isGameOver = true;
-			}
-			else {
-				newRound = true;
-				RestartRound();
+			if (lifeCount > 0) {
+				lifeCount--;
+				if (lifeCount == 0) {
+					isGameOver = true;
+				}
+				else {
+					newRound = true;
+					RestartRound();
+				}
 			}
 		}
 	}
@@ -343,20 +345,20 @@ void XonixManager::DrawCircle(HDC hdc, SimpleCircle circle, Point previousPositi
 	Color backgroundColor = Color(255, 50, 80);
 	SolidBrush bbrush(backgroundColor);
 	Pen bpen(backgroundColor, 1);
-	graphics.FillEllipse(&bbrush, x0 + previousPosition.X * CELL_SIZE - 1, y0 + previousPosition.Y * CELL_SIZE - 1,
+	graphics.FillEllipse(&bbrush, x0 + previousPosition.X * CELL_SIZE, y0 + previousPosition.Y * CELL_SIZE,
 		circle.GetRadius() * 2 + 2, circle.GetRadius() * 2 + 2);
 	
 	// Рисуем новый круг.
 	Color color = circle.GetColor();
 	SolidBrush brush(color);
-	graphics.FillEllipse(&brush, x0 + circle.GetX() * CELL_SIZE, y0 + circle.GetY() * CELL_SIZE,
+	graphics.FillEllipse(&brush, x0 + circle.GetX() * CELL_SIZE + 1, y0 + circle.GetY() * CELL_SIZE + 1,
 		circle.GetRadius() * 2, circle.GetRadius() * 2);
 	
 	// Контур делаем темнее.
 	Color darkerColor(max(color.GetR() - 100, 0),
 		max(color.GetG() - 100, 0), max(color.GetB() - 100, 0));
 	Pen pen(darkerColor, 1);
-	graphics.DrawEllipse(&pen, x0 + circle.GetX() * CELL_SIZE, y0 + circle.GetY() * CELL_SIZE,
+	graphics.DrawEllipse(&pen, x0 + circle.GetX() * CELL_SIZE + 1, y0 + circle.GetY() * CELL_SIZE + 1,
 		circle.GetRadius() * 2, circle.GetRadius() * 2);
 }
 

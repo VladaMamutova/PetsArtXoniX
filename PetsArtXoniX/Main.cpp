@@ -43,7 +43,7 @@ static HWND statusBar;
 static HWND mainMenu;
 static HWND button;
 static HWND toolBar;
-static TBBUTTON toolBarButtons[10];
+static TBBUTTON toolBarButtons[11];
 static HMENU popupMenu;
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
@@ -61,7 +61,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, INT iCmdShow)
 		return false;
 	}
 
-	int width = 500;
+	int width = 480;
 	int height = 650;
 
 	HWND hwnd = CreateWindow(progName, "Pets ArtXoniX", WS_OVERLAPPED |
@@ -182,7 +182,9 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			toolBarButtons[9].idCommand = ID_RESTART;
 			toolBarButtons[9].fsState = TBSTATE_ENABLED;
 
-			SendMessage(toolBar, TB_ADDBUTTONS, 10, (LPARAM)(&toolBarButtons));
+			toolBarButtons[10].fsStyle = TBSTYLE_SEP;
+
+			SendMessage(toolBar, TB_ADDBUTTONS, 11, (LPARAM)(&toolBarButtons));
 		}
 
 		RECT rect;
@@ -450,8 +452,25 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		SendMessage(comboBox, CB_SETEXTENDEDUI, 1, 0);
 
 		// Устанавливаем значение количества жизней в игре.
-		
-		CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_CHECKED);
+		switch (lives)
+		{
+		case 1: {
+			CheckDlgButton(hDlg, IDC_CHECK_1_LIFE, BST_CHECKED);
+			break;
+		}
+		case 3: {
+			CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_CHECKED);
+			break;
+		}
+		case 5: {
+			CheckDlgButton(hDlg, IDC_CHECK_5_LIVES, BST_CHECKED);
+			break;
+		}
+		default: {
+			CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_CHECKED);
+			break;
+		}
+		}
 
 		// Загружаем список результатов.
 		list = GetDlgItem(hDlg, IDC_LISTBOX_RESULTS);
@@ -560,6 +579,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 			return FALSE;
 		}
 		case IDC_CHECK_1_LIFE: {
+			CheckDlgButton(hDlg, IDC_CHECK_1_LIFE, BST_CHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_5_LIVES, BST_UNCHECKED);
 			lives = 1;
@@ -567,6 +587,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		}
 		case IDC_CHECK_3_LIVES: {
 			CheckDlgButton(hDlg, IDC_CHECK_1_LIFE, BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_CHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_5_LIVES, BST_UNCHECKED);
 			lives = 3;
 			return FALSE;
@@ -574,6 +595,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 		case IDC_CHECK_5_LIVES: {
 			CheckDlgButton(hDlg, IDC_CHECK_1_LIFE, BST_UNCHECKED);
 			CheckDlgButton(hDlg, IDC_CHECK_3_LIVES, BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_CHECK_5_LIVES, BST_CHECKED);
 			lives = 5;
 			return FALSE;
 		}
