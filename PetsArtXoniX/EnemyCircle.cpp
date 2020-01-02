@@ -1,6 +1,6 @@
 ﻿#include "EnemyCircle.h"
-//#include <time.h>
 #define Gdiplus
+
 EnemyCircle::EnemyCircle() :SimpleCircle()
 {
 	SetColor(COLOR);

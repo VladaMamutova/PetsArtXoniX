@@ -75,36 +75,6 @@ XonixManager::~XonixManager()
 	}
 }
 
-void XonixManager::StartNewGame() {
-	lifeCount = lives;
-	round = 0;
-	StartNewRound();
-}
-
-void XonixManager::StartNewRound() {
-	round++;
-	petImage = new Image(imagePathes[(round - 1) % IMAGE_COUNT + 1]);
-	RestartRound();
-}
-
-void XonixManager::RestartRound() {
-	isAWin = false;
-	isGameOver = false;
-	capturedFieldPercentage = 0;
-
-	mainCircle.SetDirection(Direction::None);
-	for (int i = 0; i < fieldHeight; i++) {
-		for (int j = 0; j < fieldWidth; j++) {
-			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
-				fieldCells[i][j] = CAPTURED;
-			else fieldCells[i][j] = EMPTY;
-		}
-	}
-
-	InitMainCircle(fieldWidth / 2, fieldHeight - 1);
-	InitEnemyCircles(Rect(1, 1, fieldWidth - 2, fieldHeight - 2));
-}
-
 bool XonixManager::IsGameOver()
 {
 	return isGameOver;
@@ -151,18 +121,6 @@ int XonixManager::GetTimeDelay() {
 	}
 }
 
-void XonixManager::InitMainCircle(int x, int y) {
-	mainCircle = MainCircle(x, y, CIRCLE_RADIUS);
-}
-
-void XonixManager::InitEnemyCircles(Rect bounds) {
-	srand((unsigned)time(NULL)); // С каждым запуском будут генерироваться разные числа.
-	enemyCircles.clear();
-	for (int i = 0; i < enemyCount; i++) {
-		enemyCircles.push_back(EnemyCircle::GetRandomCircle(CIRCLE_RADIUS, bounds));
-	}
-}
-
 void XonixManager::SetTopMove() {
 	mainCircle.SetDirection(Direction::Up);
 }
@@ -197,6 +155,41 @@ void XonixManager::SetSpeed(SPEED speed)
 float XonixManager::GetCapturedFieldPersentage()
 {
 	return capturedFieldPercentage;
+}
+
+void XonixManager::StartNewGame() {
+	lifeCount = lives;
+	round = 0;
+	StartNewRound();
+}
+
+void XonixManager::StartNewRound() {
+	round++;
+	petImage = new Image(imagePathes[(round - 1) % IMAGE_COUNT + 1]);
+	RestartRound();
+}
+
+void XonixManager::RestartRound() {
+	isAWin = false;
+	isGameOver = false;
+	capturedFieldPercentage = 0;
+
+	mainCircle.SetDirection(Direction::None);
+	for (int i = 0; i < fieldHeight; i++) {
+		for (int j = 0; j < fieldWidth; j++) {
+			if (i == 0 || j == 0 || i == fieldHeight - 1 || j == fieldWidth - 1)
+				fieldCells[i][j] = CAPTURED;
+			else fieldCells[i][j] = EMPTY;
+		}
+	}
+
+	mainCircle = MainCircle(fieldWidth / 2, fieldHeight - 1, CIRCLE_RADIUS);
+
+	srand((unsigned)time(NULL)); // С каждым запуском будут генерироваться разные числа.
+	enemyCircles.clear();
+	for (int i = 0; i < enemyCount; i++) {
+		enemyCircles.push_back(EnemyCircle::GetRandomCircle(CIRCLE_RADIUS, Rect(1, 1, fieldWidth - 2, fieldHeight - 2)));
+	}
 }
 
 bool XonixManager::MoveCircles(HDC hdc) {
@@ -268,12 +261,15 @@ bool XonixManager::MoveCircles(HDC hdc) {
 
 	Graphics graphics(hdc);
 	
-	graphics.FillRectangle(&darkBrush, x0 + prevX * CELL_SIZE, y0 + prevY * CELL_SIZE,
-			mainCircle.GetRadius() * 2 + 0, mainCircle.GetRadius() * 2 + 0);
+	graphics.FillRectangle(&darkBrush, x0 + prevX * CELL_SIZE + 1,
+		y0 + prevY * CELL_SIZE + 1,	mainCircle.GetRadius() * 2,
+		mainCircle.GetRadius() * 2);
 
-	graphics.FillRectangle(&darkBrush, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
-		mainCircle.GetRadius() * 2 , mainCircle.GetRadius() * 2);
-	graphics.FillEllipse(&brush, x0 + mainCircle.GetX() * CELL_SIZE, y0 + mainCircle.GetY() * CELL_SIZE,
+	graphics.FillRectangle(&darkBrush, x0 + mainCircle.GetX() * CELL_SIZE + 1,
+		y0 + mainCircle.GetY() * CELL_SIZE + 1,
+		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
+	graphics.FillEllipse(&brush, x0 + mainCircle.GetX() * CELL_SIZE + 1,
+		y0 + mainCircle.GetY() * CELL_SIZE + 1,
 		mainCircle.GetRadius() * 2, mainCircle.GetRadius() * 2);
 
 	for (size_t i = 0; i < enemyCircles.size(); i++) {

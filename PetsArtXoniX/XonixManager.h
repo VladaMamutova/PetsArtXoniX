@@ -58,8 +58,6 @@ private:
 	MainCircle mainCircle;
 	vector<EnemyCircle> enemyCircles;
 
-	void InitMainCircle(int x, int y);
-	void InitEnemyCircles(Rect bounds);
 	void DrawCircle(HDC, SimpleCircle, Point);
 	void CheckCell(int x, int y);
 	void UpdateField();
@@ -67,9 +65,8 @@ private:
 public:
 	XonixManager(Gdiplus::Rect);
 	~XonixManager();
-	void StartNewGame();
-	void StartNewRound();
-	void RestartRound();
+
+	// Get-методы.
 	bool IsGameOver();
 	bool IsAWin();
 	bool GetEnemyCount();
@@ -79,6 +76,8 @@ public:
 	int GetSpeed();
 	int GetTimeDelay();
 	float GetCapturedFieldPersentage();
+
+	// Set-методы.
 	void SetTopMove();
 	void SetBottomMove();
 	void SetLeftMove();
@@ -86,6 +85,11 @@ public:
 	void SetEnemyCount(int);
 	void SetLives(int);
 	void SetSpeed(SPEED);
+
+	// Публичные методы, реализующие логику игры.
+	void StartNewGame();
+	void StartNewRound();
+	void RestartRound();
 	bool MoveCircles(HDC);	
 	void OnPaint(HDC);
 };

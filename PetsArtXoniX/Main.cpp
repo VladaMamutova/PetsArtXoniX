@@ -111,7 +111,8 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		parts[4] = -1;
 		SendMessage(statusBar, SB_SETPARTS, 5, (LPARAM)parts);
 
-		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | CCS_NODIVIDER, ID_TOOLBAR,
+		toolBar = CreateToolbarEx(hWnd, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT |
+			TBSTYLE_TOOLTIPS | CCS_NODIVIDER, ID_TOOLBAR,
 			0, HINST_COMMCTRL, IDB_STD_LARGE_COLOR, 0, 0, 0, 0, 0, 0, sizeof(TBBUTTON));
 
 		HIMAGELIST imageList;
@@ -196,9 +197,39 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 		break;
 	}
+	case WM_NOTIFY: {
+		LPTOOLTIPTEXT toolTip;
+		toolTip = (LPTOOLTIPTEXT)lParam;
+		if (toolTip->hdr.code != TTN_NEEDTEXT) break;
+
+		switch (toolTip->hdr.idFrom) {
+		case ID_MOVE_LEFT: {
+			toolTip->lpszText = "Направить шарик влево (стрелка \"Влево\")";
+			break;
+		}
+		case ID_MOVE_TOP: {
+			toolTip->lpszText = "Направить шарик вверх (стрелка \"Вверх\")";;
+			break;
+		}
+		case ID_MOVE_RIGHT: {
+			toolTip->lpszText = "Направить шарик вправо (стрелка \"Вправо\")";
+			break;
+		}
+		case ID_MOVE_BOTTOM: {
+			toolTip->lpszText = "Направить шарик вниз (стрелка \"Вниз\")";
+			break;
+		}
+		case ID_RESTART: {
+			toolTip->lpszText = "Перезапустить игру";
+			break;
+		}
+		}
+		break;
+	}
 	case WM_CONTEXTMENU: {
-		TrackPopupMenu(popupMenu, TPM_RIGHTBUTTON |	TPM_TOPALIGN |
+		TrackPopupMenu(popupMenu, TPM_RIGHTBUTTON | TPM_TOPALIGN |
 			TPM_LEFTALIGN, LOWORD(lParam), HIWORD(lParam), 0, hWnd, NULL);
+		break;
 	}
 	case WM_KEYDOWN:
 	{
@@ -220,9 +251,8 @@ LONG WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			xonixManager->SetBottomMove();
 			break;
 		}
-		default:
-			break;
 		}
+		break;
 	}
 	case WM_COMMAND: {
 		switch (LOWORD(wParam)) {
@@ -382,8 +412,12 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT msg, WPARAM wParam,
 	case WM_INITDIALOG:
 	{
 		// Устанавливаем переключатель звука.
-		radioButton = soundsOn ? GetDlgItem(hDlg, IDC_RADIO_ON) : GetDlgItem(hDlg, IDC_RADIO_OFF);
-		radioButton = soundsOn ? GetDlgItem(hDlg, IDC_RADIO_ON) : GetDlgItem(hDlg, IDC_RADIO_OFF);
+		radioButton = soundsOn
+			? GetDlgItem(hDlg, IDC_RADIO_ON)
+			: GetDlgItem(hDlg, IDC_RADIO_OFF);
+		radioButton = soundsOn
+			? GetDlgItem(hDlg, IDC_RADIO_ON)
+			: GetDlgItem(hDlg, IDC_RADIO_OFF);
 		SendMessage(radioButton, BM_SETCHECK, 1, 0);
 		if (IsDlgButtonChecked(hDlg, IDC_RADIO_ON)) {
 			SendMessage(radioButton, BM_SETCHECK, 1, 0);
